@@ -9,12 +9,12 @@ int main()
 
     for (int i = 0; i < std::size(prog); i++)
     {
-        mem.store(entry + i, prog[i]);
+        mem.store<addr_t>(entry + i * sizeof(addr_t), prog[i]);
     }
 
     Cpu cpu{&mem};
 
-    while (!cpu.finished())
+    while (!cpu.isdone())
     {
         reg_t command = cpu.fetch();
         Instr instr = decode(command);

@@ -12,38 +12,38 @@ void executeImm (Cpu &cpu, Instr &instr)
     {
         case funct3::ADDI:
             {
-                cpu.regs[instr.rd_id] = cpu.regs[instr.rs1_id] + instr.imm;
+                cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) + instr.imm);
                 break;
             }
         case funct3::ANDI:
             {
-                cpu.regs[instr.rd_id] = cpu.regs[instr.rs1_id] & instr.imm;
+                cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) & instr.imm);
                 break;
             }
         case funct3::ORI:
             {
-                cpu.regs[instr.rd_id] = cpu.regs[instr.rs1_id] | instr.imm;
+                cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) | instr.imm);
                 break;
             }
         case funct3::XORI:
             {
-                cpu.regs[instr.rd_id] = cpu.regs[instr.rs1_id] ^ instr.imm;
+                cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) ^ instr.imm);
                 break;
             }
         case funct3::SLTI:
             {
-                cpu.regs[instr.rd_id] = cpu.regs[instr.rs1_id] < instr.imm;
+                cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) < instr.imm);
                 break;
             }
         case funct3::SLTIU:
             {
-                cpu.regs[instr.rd_id] = cpu.regs[instr.rs1_id] < (std::uint32_t)instr.imm;
+                cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) < (std::uint32_t)instr.imm);
                 break;
             }
         case funct3::SLLI:
             {
                 instr.imm = instr.imm & 0b11111;
-                cpu.regs[instr.rd_id] = cpu.regs[instr.rs1_id] << instr.imm;
+                cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) << instr.imm);
                 break;
             }
         case funct3::SRLI:
@@ -52,12 +52,12 @@ void executeImm (Cpu &cpu, Instr &instr)
                 //SRAI:
                 if (instr.imm >> 5)
                 {
-                    cpu.regs[instr.rd_id] = (std::uint32_t)cpu.regs[instr.rs1_id] >> instr.imm;
+                    cpu.setReg(instr.rd_id, (std::uint32_t)cpu.getReg(instr.rs1_id) >> instr.imm);
                 }
                 //SRLI
                 else
                 {
-                    cpu.regs[instr.rd_id] = (std::uint32_t)cpu.regs[instr.rs1_id] >> instr.imm;
+                    cpu.setReg(instr.rd_id, (std::uint32_t)cpu.getReg(instr.rs1_id) >> instr.imm);
                 }
                 break;
             }
@@ -77,58 +77,58 @@ void executeOp (Cpu &cpu, Instr &instr)
                 //SUB
                 if  (instr.funct7)
                 {
-                    cpu.regs[instr.rd_id] = cpu.regs[instr.rs1_id] - cpu.regs[instr.rs2_id];
+                    cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) - cpu.getReg(instr.rs2_id));
                 }
                 //ADD
                 else
-            {
-                    cpu.regs[instr.rd_id] = cpu.regs[instr.rs1_id] + cpu.regs[instr.rs2_id];
+                {
+                    cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) + cpu.getReg(instr.rs2_id));
                 }
                 break;
             }
         case funct3::AND:
             {
-                cpu.regs[instr.rd_id] = cpu.regs[instr.rs1_id] & cpu.regs[instr.rs2_id];
+                cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) & cpu.getReg(instr.rs2_id));
                 break;
             }
         case funct3::OR:
             {
-                cpu.regs[instr.rd_id] = cpu.regs[instr.rs1_id] | cpu.regs[instr.rs2_id];
+                cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) | cpu.getReg(instr.rs2_id));
                 break;
             }
         case funct3::XOR:
             {
-                cpu.regs[instr.rd_id] = cpu.regs[instr.rs1_id] ^ cpu.regs[instr.rs2_id];
+                cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) ^ cpu.getReg(instr.rs2_id));
                 break;
             }
         case funct3::SLT:
             {
-                cpu.regs[instr.rd_id] = cpu.regs[instr.rs1_id] < cpu.regs[instr.rs2_id];
+                cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) < cpu.getReg(instr.rs2_id));
                 break;
             }
         case funct3::SLTU:
             {
-                cpu.regs[instr.rd_id] = cpu.regs[instr.rs1_id] < (std::uint32_t)instr.rs2_id;
+                cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) < (std::uint32_t)cpu.getReg(instr.rs2_id));
                 break;
             }
         case funct3::SLL:
             {
                 //if SLTIU
                 instr.rs2_id = instr.rs2_id & 0b11111;
-                cpu.regs[instr.rd_id] = cpu.regs[instr.rs1_id] << instr.rs2_id;
+                cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) << cpu.getReg(instr.rs2_id));
                 break;
             }
         case funct3::SRL:
             {
                 instr.rs2_id = instr.rs2_id & 0b11111;
                 //SRA
-                if (instr.funct7) 
+                if (instr.funct7)
                 {
-                    cpu.regs[instr.rd_id] = cpu.regs[instr.rs1_id] >> instr.rs2_id;
+                    cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) >> cpu.getReg(instr.rs2_id));
                 }
                 else
                 {
-                    cpu.regs[instr.rd_id] = (std::uint32_t)cpu.regs[instr.rs1_id] >> instr.rs2_id;
+                    cpu.setReg(instr.rd_id, (std::uint32_t)cpu.getReg(instr.rs1_id) >> cpu.getReg(instr.rs2_id));
                 }
                 break;
             }
@@ -146,12 +146,12 @@ void executeBranch (Cpu &cpu, Instr &instr)
     {
         case funct3::BEQ:
             {
-                if (cpu.regs[instr.rs1_id] == cpu.regs[instr.rs2_id]) {cpu.pc += instr.imm;}
+                if (cpu.getReg(instr.rs1_id) == cpu.getReg(instr.rs2_id)) {cpu.advancePc(instr.imm);}
                 return;
             }
         case funct3::BNE:
             {
-                if (cpu.regs[instr.rs1_id] != cpu.regs[instr.rs2_id]) {cpu.pc += instr.imm;}
+                if (cpu.getReg(instr.rs1_id) != cpu.getReg(instr.rs2_id)) {cpu.advancePc(instr.imm);}
                 return;
             }
     }
@@ -164,17 +164,17 @@ void executeLoad (Cpu &cpu, Instr &instr)
     {
         case funct3::LB:
             {
-                cpu.regs[instr.rd_id] = cpu.mem->load(instr.imm + cpu.regs[instr.rs1_id]);
+                cpu.setReg(instr.rd_id, cpu.load<byte_t>(instr.imm + cpu.getReg(instr.rs1_id)));
                 break;
             }
         // case funct3::LH:
         //     {
-        //         cpu.regs[instr.rd_id] = cpu.mem->load(instr.imm + cpu.regs[instr.rs1_id], sizeof(half_t));
+        //         cpu.setReg(instr.rd_id,  = cpu.mem->load(instr.imm + cpu.regs[instr.rs1_id], sizeof(half_t));
         //         break;
         //     }
         // case funct3::LW:
         //     {
-        //         cpu.regs[instr.rd_id] = cpu.mem->load(instr.imm + cpu.regs[instr.rs1_id], sizeof(word_t));
+        //         cpu.setReg(instr.rd_id,  = cpu.mem->load(instr.imm + cpu.regs[instr.rs1_id], sizeof(word_t));
         //         break;
         //     }
         //TODO: WRITE THE REST
@@ -189,7 +189,7 @@ void executeStore (Cpu &cpu, Instr &instr)
     {
         case funct3::SB:
             {
-                cpu.mem->store(instr.imm + cpu.regs[instr.rs1_id], cpu.regs[instr.rs2_id]);
+                cpu.store<byte_t>((addr_t)(instr.imm + cpu.getReg(instr.rs1_id)), cpu.getReg(instr.rs2_id));
                 break;
             }
         // case funct3::SH:
@@ -209,6 +209,6 @@ void executeStore (Cpu &cpu, Instr &instr)
 
 void executeSystem(Cpu &cpu, Instr &instr)
 {
-    cpu.done = 1;
+    cpu.setDone();
 }
 

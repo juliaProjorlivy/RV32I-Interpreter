@@ -1,6 +1,7 @@
 #ifndef RV32I_HPP
 #define RV32I_HPP
 
+#include <cstddef>
 #include <cstdint>
 #include <vector>
 #include <iostream>
@@ -115,55 +116,61 @@ namespace S
     int getImm(reg_t instr);
 }
 
+static const std::size_t MEMSIZE = 0xbadface;
+
 class Memory
 {
 private:
-    std::vector<mem_t> data;
-    static const std::size_t MemSize = 0xf00000;
+    std::size_t MemSize;
+    mem_t *data;
 public:
-    Memory() : data(MemSize) {}
-    ~Memory() = default;
+    Memory(std::size_t MemSize_ = MEMSIZE) : MemSize(MemSize_) {data = new mem_t[MemSize_];}
+    ~Memory() {delete [] data;};
 
-    reg_t load(addr_t addr) const {return data[addr];}
-    void store(addr_t addr, reg_t val) {data[addr] = val;}
-    // reg_t load(addr_t addr, std::size_t size = 4) const 
-    // {
-    //     switch (size)
-    //     {
-    //         case 4: return reg_t(*(addr_t *)(&data + addr));
-    //         case 2: return reg_t(*(half_t *)(&data + addr));
-    //         case 1: return reg_t(*(byte_t *)(&data + addr));
-    //         //TODO: CHANGE RET VALUE (MANAGE ERROR)
-    //         default: return 1;
-    //     }
-    // }
-    //
-    // void store(addr_t addr, reg_t val, std::size_t size = 4)
-    // {
-    //     switch (size)
-    //     {
-    //         case 4: *(addr_t *)(&data + addr) = val; break;
-    //         case 2: *(half_t *)(&data + addr) = val; break;
-    //         case 1: *(byte_t *)(&data + addr) = val; break;
-    //     }
-    // }
+    template<typename Value_t>
+    reg_t load(addr_t addr) const
+    {
+        return (reg_t)(*(Value_t *)(data + addr));
+    }
 
+    template<typename Store_t, typename Value_t>
+    void store(addr_t addr, Value_t val)
+    {
+        *((Store_t *)(data + addr)) = val;
+    }
 };
 
-struct Cpu
+class Cpu
 {
-    reg_t pc = 0;
+private:
+    reg_t pc;
     reg_t regs[NRegs] {};
-    Memory *mem{};
+    Memory *mem {};
     bool done {false};
 
+public:
     Cpu (Memory *mem_, addr_t entry = 0) : mem(mem_), pc(entry) {}
+    ~Cpu () = default;
 
-    bool finished() {return done;}
-    void advancePc() {pc++;}
+    bool isdone() const {return done;}
+    void advancePc(std::size_t step = sizeof(reg_t)) {pc += step;}
+    void setPc(reg_t val) {pc = val;}
 
-    void setReg(int ireg, reg_t &value) {regs[ireg] = value;}
+    void setReg(int ireg, reg_t value) {regs[ireg] = value;}
     reg_t getReg(int ireg) const {return regs[ireg];}
+    void setDone(bool val = 1) {done = val;}
+
+    template<typename Value_t>
+    reg_t load(addr_t addr) const
+    {
+        mem->load<Value_t>(addr);
+    }
+
+    template<typename Store_t, typename Value_t>
+    void store(addr_t addr, Value_t val)
+    {
+        mem->store<Store_t, Value_t>(addr, val);
+    }
 
     void dump(std::ostream &os)
     {
@@ -175,9 +182,36 @@ struct Cpu
         }
     }
 
-    reg_t fetch() {return mem->load(pc);}
+    reg_t fetch() {return mem->load<reg_t>(pc);}
 };
-
+// struct Cpu
+// {
+//     reg_t pc;
+//     reg_t regs[NRegs] {};
+//     Memory *mem {};
+//     bool done {false};
+//
+//     Cpu (Memory *mem_, addr_t entry = 0) : mem(mem_), pc(entry) {}
+//
+//     bool isdone() {return done;}
+//     void advancePc() {pc += sizeof(reg_t);}
+//
+//     void setReg(int ireg, reg_t &value) {regs[ireg] = value;}
+//     reg_t getReg(int ireg) const {return regs[ireg];}
+//
+//     void dump(std::ostream &os)
+//     {
+//         for (int i = 0; i < NRegs; i++)
+//         {
+//             os << "pc: " << pc << std::endl;
+//             os << "regs:" << std::endl;
+//             os << "x" << i << " = " << regs[i] << std::endl;
+//         }
+//     }
+//
+//     reg_t fetch() {return mem->load<reg_t>(pc);}
+// };
+//
 //TODO: mb union or
 //for every template it's own struct
 //mb class
