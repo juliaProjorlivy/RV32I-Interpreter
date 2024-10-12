@@ -167,16 +167,16 @@ void executeLoad (Cpu &cpu, Instr &instr)
                 cpu.setReg(instr.rd_id, cpu.load<byte_t>(instr.imm + cpu.getReg(instr.rs1_id)));
                 break;
             }
-        // case funct3::LH:
-        //     {
-        //         cpu.setReg(instr.rd_id,  = cpu.mem->load(instr.imm + cpu.regs[instr.rs1_id], sizeof(half_t));
-        //         break;
-        //     }
-        // case funct3::LW:
-        //     {
-        //         cpu.setReg(instr.rd_id,  = cpu.mem->load(instr.imm + cpu.regs[instr.rs1_id], sizeof(word_t));
-        //         break;
-        //     }
+        case funct3::LH:
+            {
+                cpu.setReg(instr.rd_id, cpu.load<half_t>(instr.imm + cpu.getReg(instr.rs1_id)));
+                break;
+            }
+        case funct3::LW:
+            {
+                cpu.setReg(instr.rd_id, cpu.load<word_t>(instr.imm + cpu.getReg(instr.rs1_id)));
+                break;
+            }
         //TODO: WRITE THE REST
     }
     cpu.advancePc();
@@ -207,6 +207,30 @@ void executeStore (Cpu &cpu, Instr &instr)
     cpu.advancePc();
 }
 
+void executeLui(Cpu &cpu, Instr &instr)
+{
+    cpu.setReg(instr.rd_id, instr.imm);
+    cpu.advancePc();
+}
+
+void executeAuipc(Cpu &cpu, Instr &instr)
+{
+    cpu.advancePc(instr.imm);
+    cpu.setReg(instr.rd_id, cpu.getPc());
+}
+
+void executeJalr(Cpu &cpu, Instr &instr)
+{
+    imm_t target_addr = (cpu.getReg(instr.rs1_id) + instr.imm) & 0xfffffffe; //least-significant bit to zero
+    cpu.setReg(instr.rd_id, cpu.getPc() + sizeof(addr_t));
+    cpu.setPc(target_addr);
+}
+
+void executeJal(Cpu &cpu, Instr &instr)
+{
+    cpu.setReg(instr.rd_id, cpu.getPc() + sizeof(addr_t));
+    cpu.advancePc(instr.imm);
+}
 void executeSystem(Cpu &cpu, Instr &instr)
 {
     cpu.setDone();

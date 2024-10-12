@@ -19,10 +19,10 @@ constexpr std::size_t NRegs = 32;
 
 enum class Opcode : std::uint8_t
 {
-    Unknown = 0b0000000,
+    // Unknown = 0b0000000,
     Load    = 0b0000011,
     Imm     = 0b0010011,
-    Aupic   = 0b0010111,
+    Auipc   = 0b0010111,
     Store   = 0b0100011,
     Op      = 0b0110011,
     Lui     = 0b0110111,
@@ -31,8 +31,6 @@ enum class Opcode : std::uint8_t
     Jal     = 0b1101111,
     System  = 0b1110011,
 };
-
-
 
 namespace I
 {
@@ -69,6 +67,7 @@ namespace I
     //TODO:FINISH FOR SHIFTS
     imm_t getImm(reg_t instr);
 };
+
 namespace R
 {
     namespace Op {
@@ -100,7 +99,7 @@ namespace B
         BGEU = 0b111,
     };}
 
-    int getImm(reg_t instr);
+    imm_t getImm(reg_t instr);
 }
 
 namespace S
@@ -113,11 +112,21 @@ namespace S
         SW = 0b010,
     };}
 
-    int getImm(reg_t instr);
+    imm_t getImm(reg_t instr);
 }
 
-static const std::size_t MEMSIZE = 0xbadface;
+namespace U
+{
+    imm_t getImm(reg_t instr);
+}
 
+namespace J
+{
+    imm_t getImm(reg_t instr);
+}
+
+
+static const std::size_t MEMSIZE = 0xbadface;
 class Memory
 {
 private:
@@ -154,6 +163,7 @@ public:
 
     bool isdone() const {return done;}
     void advancePc(std::size_t step = sizeof(reg_t)) {pc += step;}
+    reg_t getPc() const {return pc;}
     void setPc(reg_t val) {pc = val;}
 
     void setReg(int ireg, reg_t value) {regs[ireg] = value;}
@@ -184,34 +194,7 @@ public:
 
     reg_t fetch() {return mem->load<reg_t>(pc);}
 };
-// struct Cpu
-// {
-//     reg_t pc;
-//     reg_t regs[NRegs] {};
-//     Memory *mem {};
-//     bool done {false};
-//
-//     Cpu (Memory *mem_, addr_t entry = 0) : mem(mem_), pc(entry) {}
-//
-//     bool isdone() {return done;}
-//     void advancePc() {pc += sizeof(reg_t);}
-//
-//     void setReg(int ireg, reg_t &value) {regs[ireg] = value;}
-//     reg_t getReg(int ireg) const {return regs[ireg];}
-//
-//     void dump(std::ostream &os)
-//     {
-//         for (int i = 0; i < NRegs; i++)
-//         {
-//             os << "pc: " << pc << std::endl;
-//             os << "regs:" << std::endl;
-//             os << "x" << i << " = " << regs[i] << std::endl;
-//         }
-//     }
-//
-//     reg_t fetch() {return mem->load<reg_t>(pc);}
-// };
-//
+
 //TODO: mb union or
 //for every template it's own struct
 //mb class
@@ -236,7 +219,11 @@ void executeBranch (Cpu &cpu, Instr &instr);
 void executeLoad (Cpu &cpu, Instr &instr);
 void executeStore (Cpu &cpu, Instr &instr);
 void executeSystem(Cpu &cpu, Instr &instr);
-void execute (Cpu &cpu, Instr &instr);
+void executeLui(Cpu &cpu, Instr &instr);
+void executeAuipc(Cpu &cpu, Instr &instr);
+void executeJalr(Cpu &cpu, Instr &instr);
+void executeJal(Cpu &cpu, Instr &instr);
+void execute(Cpu &cpu, Instr &instr);
 
 Opcode  getOpcode(reg_t instr);
 uint8_t getfunct3(reg_t instr);
