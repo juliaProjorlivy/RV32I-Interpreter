@@ -192,16 +192,16 @@ void executeStore (Cpu &cpu, Instr &instr)
                 cpu.store<byte_t>((addr_t)(instr.imm + cpu.getReg(instr.rs1_id)), cpu.getReg(instr.rs2_id));
                 break;
             }
-        // case funct3::SH:
-        //     {
-        //         cpu.mem->store(instr.imm + cpu.regs[instr.rs1_id], cpu.regs[instr.rs2_id], sizeof(half_t));
-        //         break;
-        //     }
-        // case funct3::SW:
-        //     {
-        //         cpu.mem->store(instr.imm + cpu.regs[instr.rs1_id], cpu.regs[instr.rs2_id], sizeof(word_t));
-        //         break;
-        //     }
+        case funct3::SH:
+            {
+                cpu.store<half_t>((addr_t)(instr.imm + cpu.getReg(instr.rs1_id)), cpu.getReg(instr.rs2_id));
+                break;
+            }
+        case funct3::SW:
+            {
+                cpu.store<word_t>((addr_t)(instr.imm + cpu.getReg(instr.rs1_id)), cpu.getReg(instr.rs2_id));
+                break;
+            }
         //TODO: WRITE THE REST
     }
     cpu.advancePc();
