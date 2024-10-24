@@ -1,4 +1,5 @@
 #include "rv32i.hpp"
+#include "cpu.hpp"
 #include <cstdint>
 
 //TODO: GET RID OF MAGIC NUMBERS
@@ -32,7 +33,7 @@ int getRs2Id(reg_t instr)
     return (instr >> 20) & regsize;
 }
 
-Instr decode(reg_t &instr_)
+Instr decode(reg_t instr_)
 {
     Instr instr{};
     Opcode opcode = getOpcode(instr_);
@@ -78,6 +79,7 @@ Instr decode(reg_t &instr_)
             }
         case Opcode::Store:
             {
+                instr.funct3 = getfunct3(instr_);
                 instr.imm    = S::getImm(instr_);
                 instr.rs1_id = getRs1Id(instr_);
                 instr.rs2_id = getRs2Id(instr_);
@@ -106,10 +108,10 @@ Instr decode(reg_t &instr_)
             }
         case Opcode::Jalr:
             {
-                instr.imm   = I::getImm(instr_);
-                instr.rd_id = getRdId(instr_);
+                instr.imm    = I::getImm(instr_);
+                instr.rd_id  = getRdId(instr_);
                 instr.rs1_id = getRs1Id(instr_);
-                instr.exec  = executeJalr;
+                instr.exec   = executeJalr;
                 break;
             }
         case Opcode::Jal:
@@ -141,7 +143,7 @@ imm_t B::getImm(reg_t instr)
 
 imm_t S::getImm(reg_t instr)
 {
-    imm_t imm = (instr >> 7) + ((instr >> 25) << 5);
+    imm_t imm = ((instr >> 20) & 0xffffffe0) + ((instr >> 7) & 0x0000001e);
     return imm;
 }
 

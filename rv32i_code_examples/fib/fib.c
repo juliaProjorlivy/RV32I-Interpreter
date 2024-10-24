@@ -14,13 +14,11 @@ int fib(int n, struct Fib pair)
     };
 }
 
-int main(int argc, char *argv[])
+int main()
 {
-    int n = 0;
-    if(argc < 2) {n = 5;}
-    else {n = argv[1][0] + '0';}
+    int n = 10;
     struct Fib initial_pair = {0, 1};
-    volatile int result = fib(n, initial_pair);
+    int result = fib(n, initial_pair);
     return result;
 }
 

@@ -1,4 +1,5 @@
 #include "rv32i.hpp"
+#include "cpu.hpp"
 
 void execute (Cpu &cpu, Instr &instr)
 {
@@ -37,7 +38,7 @@ void executeImm (Cpu &cpu, Instr &instr)
             }
         case funct3::SLTIU:
             {
-                cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) < (std::uint32_t)instr.imm);
+                cpu.setReg(instr.rd_id, (std::uint32_t)cpu.getReg(instr.rs1_id) < (std::uint32_t)instr.imm);
                 break;
             }
         case funct3::SLLI:
@@ -108,7 +109,7 @@ void executeOp (Cpu &cpu, Instr &instr)
             }
         case funct3::SLTU:
             {
-                cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) < (std::uint32_t)cpu.getReg(instr.rs2_id));
+                cpu.setReg(instr.rd_id, (std::uint32_t)cpu.getReg(instr.rs1_id) < (std::uint32_t)cpu.getReg(instr.rs2_id));
                 break;
             }
         case funct3::SLL:
@@ -141,17 +142,42 @@ void executeOp (Cpu &cpu, Instr &instr)
 void executeBranch (Cpu &cpu, Instr &instr)
 {
     using namespace B::Branch;
-    //TODO: WRITE THE REST
     switch ((funct3)instr.funct3)
     {
         case funct3::BEQ:
             {
                 if (cpu.getReg(instr.rs1_id) == cpu.getReg(instr.rs2_id)) {cpu.advancePc(instr.imm);}
+                else {cpu.advancePc();}
                 return;
             }
         case funct3::BNE:
             {
                 if (cpu.getReg(instr.rs1_id) != cpu.getReg(instr.rs2_id)) {cpu.advancePc(instr.imm);}
+                else {cpu.advancePc();}
+                return;
+            }
+        case funct3::BLT:
+            {
+                if (cpu.getReg(instr.rs1_id) < cpu.getReg(instr.rs2_id)) {cpu.advancePc(instr.imm);}
+                else {cpu.advancePc();}
+                return;
+            }
+        case funct3::BGE:
+            {
+                if (cpu.getReg(instr.rs1_id) > cpu.getReg(instr.rs2_id)) {cpu.advancePc(instr.imm);}
+                else {cpu.advancePc();}
+                return;
+            }
+        case funct3::BLTU:
+            {
+                if ((addr_t)cpu.getReg(instr.rs1_id) < (addr_t)cpu.getReg(instr.rs2_id)) {cpu.advancePc(instr.imm);}
+                else {cpu.advancePc();}
+                return;
+            }
+        case funct3::BGEU:
+            {
+                if ((addr_t)cpu.getReg(instr.rs1_id) > (addr_t)cpu.getReg(instr.rs2_id)) {cpu.advancePc(instr.imm);}
+                else {cpu.advancePc();}
                 return;
             }
     }
@@ -177,7 +203,21 @@ void executeLoad (Cpu &cpu, Instr &instr)
                 cpu.setReg(instr.rd_id, cpu.load<word_t>(instr.imm + cpu.getReg(instr.rs1_id)));
                 break;
             }
-        //TODO: WRITE THE REST
+        case funct3::LBU:
+            {
+                cpu.setReg(instr.rd_id, (0x0000ffff & cpu.load<word_t>(instr.imm + cpu.getReg(instr.rs1_id))));
+                break;
+            }
+        case funct3::LHU:
+            {
+                cpu.setReg(instr.rd_id, (0x0000ffff & cpu.load<word_t>(instr.imm + cpu.getReg(instr.rs1_id))));
+                break;
+            }
+        case funct3::LWU:
+            {
+                cpu.setReg(instr.rd_id, (0x0000ffff & cpu.load<word_t>(instr.imm + cpu.getReg(instr.rs1_id))));
+                break;
+            }
     }
     cpu.advancePc();
 }
@@ -202,7 +242,6 @@ void executeStore (Cpu &cpu, Instr &instr)
                 cpu.store<word_t>((addr_t)(instr.imm + cpu.getReg(instr.rs1_id)), cpu.getReg(instr.rs2_id));
                 break;
             }
-        //TODO: WRITE THE REST
     }
     cpu.advancePc();
 }
@@ -233,6 +272,7 @@ void executeJal(Cpu &cpu, Instr &instr)
 }
 void executeSystem(Cpu &cpu, Instr &instr)
 {
+    (void)instr;
     cpu.setDone();
 }
 
