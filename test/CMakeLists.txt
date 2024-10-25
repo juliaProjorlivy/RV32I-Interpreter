@@ -12,20 +12,26 @@ if(NOT googletest_POPULATED)
     add_subdirectory(${googletest_SOURCE_DIR} ${googletest_BINARY_DIR} EXCLUDE_FROM_ALL)
 endif()
 
+FetchContent_MakeAvailable(googletest)
+add_library(GTest::GTest INTERFACE IMPORTED)
+
 # Define tests
 enable_testing()
 
-add_executable(test instr_test.cpp)
+add_executable(test test_execute.cpp test_decode.cpp main.cpp)
 
 target_link_libraries(test
     PRIVATE
     rv32i
+    pthread
+    gtest
+    gmock
     gtest_main
 )
 
 target_include_directories(test
     PUBLIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/../include)
+    ${CMAKE_CURRENT_SOURCE_DIR}/)
 
 include(GoogleTest)
 gtest_discover_tests(test)

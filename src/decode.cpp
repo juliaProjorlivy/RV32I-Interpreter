@@ -137,7 +137,7 @@ imm_t I::getImm(reg_t instr)
 imm_t B::getImm(reg_t instr)
 {
     imm_t imm = ((instr >> 20) & 0xfffff000) + ((instr << 4) & 0x00000800) +
-                ((instr >> 20) & 0x000007c0) + ((instr >> 7) & 0x0000001e);
+                ((instr >> 20) & 0x000007e0) + ((instr >> 7) & 0x0000001e);
     return imm;
 }
 
