@@ -1,10 +1,10 @@
-Start testing: Oct 26 17:14 MSK
+Start testing: Oct 26 20:35 MSK
 ----------------------------------------------------------
 1/13 Testing: RV32I_Test.TEST_ADDI
 1/13 Test: RV32I_Test.TEST_ADDI
 Command: "/home/julia/projects/RV32I-Interpreter/build/test/test" "--gtest_filter=RV32I_Test.TEST_ADDI" "--gtest_also_run_disabled_tests"
 Directory: /home/julia/projects/RV32I-Interpreter/build/test
-"RV32I_Test.TEST_ADDI" start time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_ADDI" start time: Oct 26 20:35 MSK
 Output:
 ----------------------------------------------------------
 Note: Google Test filter = RV32I_Test.TEST_ADDI
@@ -12,17 +12,17 @@ Note: Google Test filter = RV32I_Test.TEST_ADDI
 [----------] Global test environment set-up.
 [----------] 1 test from RV32I_Test
 [ RUN      ] RV32I_Test.TEST_ADDI
-[       OK ] RV32I_Test.TEST_ADDI (8 ms)
-[----------] 1 test from RV32I_Test (8 ms total)
+[       OK ] RV32I_Test.TEST_ADDI (4 ms)
+[----------] 1 test from RV32I_Test (4 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (8 ms total)
+[==========] 1 test from 1 test suite ran. (4 ms total)
 [  PASSED  ] 1 test.
 <end of output>
-Test time =   0.04 sec
+Test time =   0.02 sec
 ----------------------------------------------------------
 Test Passed.
-"RV32I_Test.TEST_ADDI" end time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_ADDI" end time: Oct 26 20:35 MSK
 "RV32I_Test.TEST_ADDI" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -30,7 +30,7 @@ Test Passed.
 2/13 Test: RV32I_Test.TEST_SLLI
 Command: "/home/julia/projects/RV32I-Interpreter/build/test/test" "--gtest_filter=RV32I_Test.TEST_SLLI" "--gtest_also_run_disabled_tests"
 Directory: /home/julia/projects/RV32I-Interpreter/build/test
-"RV32I_Test.TEST_SLLI" start time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_SLLI" start time: Oct 26 20:35 MSK
 Output:
 ----------------------------------------------------------
 Note: Google Test filter = RV32I_Test.TEST_SLLI
@@ -38,17 +38,17 @@ Note: Google Test filter = RV32I_Test.TEST_SLLI
 [----------] Global test environment set-up.
 [----------] 1 test from RV32I_Test
 [ RUN      ] RV32I_Test.TEST_SLLI
-[       OK ] RV32I_Test.TEST_SLLI (8 ms)
-[----------] 1 test from RV32I_Test (8 ms total)
+[       OK ] RV32I_Test.TEST_SLLI (3 ms)
+[----------] 1 test from RV32I_Test (3 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (8 ms total)
+[==========] 1 test from 1 test suite ran. (4 ms total)
 [  PASSED  ] 1 test.
 <end of output>
-Test time =   0.04 sec
+Test time =   0.02 sec
 ----------------------------------------------------------
 Test Passed.
-"RV32I_Test.TEST_SLLI" end time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_SLLI" end time: Oct 26 20:35 MSK
 "RV32I_Test.TEST_SLLI" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -56,7 +56,7 @@ Test Passed.
 3/13 Test: RV32I_Test.TEST_SLTI
 Command: "/home/julia/projects/RV32I-Interpreter/build/test/test" "--gtest_filter=RV32I_Test.TEST_SLTI" "--gtest_also_run_disabled_tests"
 Directory: /home/julia/projects/RV32I-Interpreter/build/test
-"RV32I_Test.TEST_SLTI" start time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_SLTI" start time: Oct 26 20:35 MSK
 Output:
 ----------------------------------------------------------
 Note: Google Test filter = RV32I_Test.TEST_SLTI
@@ -64,17 +64,17 @@ Note: Google Test filter = RV32I_Test.TEST_SLTI
 [----------] Global test environment set-up.
 [----------] 1 test from RV32I_Test
 [ RUN      ] RV32I_Test.TEST_SLTI
-[       OK ] RV32I_Test.TEST_SLTI (8 ms)
-[----------] 1 test from RV32I_Test (8 ms total)
+[       OK ] RV32I_Test.TEST_SLTI (3 ms)
+[----------] 1 test from RV32I_Test (3 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (8 ms total)
+[==========] 1 test from 1 test suite ran. (3 ms total)
 [  PASSED  ] 1 test.
 <end of output>
-Test time =   0.04 sec
+Test time =   0.02 sec
 ----------------------------------------------------------
 Test Passed.
-"RV32I_Test.TEST_SLTI" end time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_SLTI" end time: Oct 26 20:35 MSK
 "RV32I_Test.TEST_SLTI" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -82,7 +82,7 @@ Test Passed.
 4/13 Test: RV32I_Test.TEST_SLTIU
 Command: "/home/julia/projects/RV32I-Interpreter/build/test/test" "--gtest_filter=RV32I_Test.TEST_SLTIU" "--gtest_also_run_disabled_tests"
 Directory: /home/julia/projects/RV32I-Interpreter/build/test
-"RV32I_Test.TEST_SLTIU" start time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_SLTIU" start time: Oct 26 20:35 MSK
 Output:
 ----------------------------------------------------------
 Note: Google Test filter = RV32I_Test.TEST_SLTIU
@@ -90,17 +90,17 @@ Note: Google Test filter = RV32I_Test.TEST_SLTIU
 [----------] Global test environment set-up.
 [----------] 1 test from RV32I_Test
 [ RUN      ] RV32I_Test.TEST_SLTIU
-[       OK ] RV32I_Test.TEST_SLTIU (8 ms)
-[----------] 1 test from RV32I_Test (8 ms total)
+[       OK ] RV32I_Test.TEST_SLTIU (3 ms)
+[----------] 1 test from RV32I_Test (3 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (8 ms total)
+[==========] 1 test from 1 test suite ran. (3 ms total)
 [  PASSED  ] 1 test.
 <end of output>
-Test time =   0.04 sec
+Test time =   0.02 sec
 ----------------------------------------------------------
 Test Passed.
-"RV32I_Test.TEST_SLTIU" end time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_SLTIU" end time: Oct 26 20:35 MSK
 "RV32I_Test.TEST_SLTIU" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -108,7 +108,7 @@ Test Passed.
 5/13 Test: RV32I_Test.TEST_BEQ
 Command: "/home/julia/projects/RV32I-Interpreter/build/test/test" "--gtest_filter=RV32I_Test.TEST_BEQ" "--gtest_also_run_disabled_tests"
 Directory: /home/julia/projects/RV32I-Interpreter/build/test
-"RV32I_Test.TEST_BEQ" start time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_BEQ" start time: Oct 26 20:35 MSK
 Output:
 ----------------------------------------------------------
 Note: Google Test filter = RV32I_Test.TEST_BEQ
@@ -116,17 +116,17 @@ Note: Google Test filter = RV32I_Test.TEST_BEQ
 [----------] Global test environment set-up.
 [----------] 1 test from RV32I_Test
 [ RUN      ] RV32I_Test.TEST_BEQ
-[       OK ] RV32I_Test.TEST_BEQ (8 ms)
-[----------] 1 test from RV32I_Test (8 ms total)
+[       OK ] RV32I_Test.TEST_BEQ (3 ms)
+[----------] 1 test from RV32I_Test (3 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (9 ms total)
+[==========] 1 test from 1 test suite ran. (3 ms total)
 [  PASSED  ] 1 test.
 <end of output>
-Test time =   0.04 sec
+Test time =   0.02 sec
 ----------------------------------------------------------
 Test Passed.
-"RV32I_Test.TEST_BEQ" end time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_BEQ" end time: Oct 26 20:35 MSK
 "RV32I_Test.TEST_BEQ" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -134,7 +134,7 @@ Test Passed.
 6/13 Test: RV32I_Test.TEST_JAL
 Command: "/home/julia/projects/RV32I-Interpreter/build/test/test" "--gtest_filter=RV32I_Test.TEST_JAL" "--gtest_also_run_disabled_tests"
 Directory: /home/julia/projects/RV32I-Interpreter/build/test
-"RV32I_Test.TEST_JAL" start time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_JAL" start time: Oct 26 20:35 MSK
 Output:
 ----------------------------------------------------------
 Note: Google Test filter = RV32I_Test.TEST_JAL
@@ -142,17 +142,17 @@ Note: Google Test filter = RV32I_Test.TEST_JAL
 [----------] Global test environment set-up.
 [----------] 1 test from RV32I_Test
 [ RUN      ] RV32I_Test.TEST_JAL
-[       OK ] RV32I_Test.TEST_JAL (8 ms)
-[----------] 1 test from RV32I_Test (8 ms total)
+[       OK ] RV32I_Test.TEST_JAL (3 ms)
+[----------] 1 test from RV32I_Test (3 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (8 ms total)
+[==========] 1 test from 1 test suite ran. (4 ms total)
 [  PASSED  ] 1 test.
 <end of output>
-Test time =   0.04 sec
+Test time =   0.02 sec
 ----------------------------------------------------------
 Test Passed.
-"RV32I_Test.TEST_JAL" end time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_JAL" end time: Oct 26 20:35 MSK
 "RV32I_Test.TEST_JAL" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -160,7 +160,7 @@ Test Passed.
 7/13 Test: RV32I_Test.TEST_JALR
 Command: "/home/julia/projects/RV32I-Interpreter/build/test/test" "--gtest_filter=RV32I_Test.TEST_JALR" "--gtest_also_run_disabled_tests"
 Directory: /home/julia/projects/RV32I-Interpreter/build/test
-"RV32I_Test.TEST_JALR" start time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_JALR" start time: Oct 26 20:35 MSK
 Output:
 ----------------------------------------------------------
 Note: Google Test filter = RV32I_Test.TEST_JALR
@@ -168,17 +168,17 @@ Note: Google Test filter = RV32I_Test.TEST_JALR
 [----------] Global test environment set-up.
 [----------] 1 test from RV32I_Test
 [ RUN      ] RV32I_Test.TEST_JALR
-[       OK ] RV32I_Test.TEST_JALR (8 ms)
-[----------] 1 test from RV32I_Test (8 ms total)
+[       OK ] RV32I_Test.TEST_JALR (3 ms)
+[----------] 1 test from RV32I_Test (3 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (9 ms total)
+[==========] 1 test from 1 test suite ran. (3 ms total)
 [  PASSED  ] 1 test.
 <end of output>
-Test time =   0.04 sec
+Test time =   0.02 sec
 ----------------------------------------------------------
 Test Passed.
-"RV32I_Test.TEST_JALR" end time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_JALR" end time: Oct 26 20:35 MSK
 "RV32I_Test.TEST_JALR" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -186,7 +186,7 @@ Test Passed.
 8/13 Test: RV32I_Test.TEST_DECODE_IMM
 Command: "/home/julia/projects/RV32I-Interpreter/build/test/test" "--gtest_filter=RV32I_Test.TEST_DECODE_IMM" "--gtest_also_run_disabled_tests"
 Directory: /home/julia/projects/RV32I-Interpreter/build/test
-"RV32I_Test.TEST_DECODE_IMM" start time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_DECODE_IMM" start time: Oct 26 20:35 MSK
 Output:
 ----------------------------------------------------------
 Note: Google Test filter = RV32I_Test.TEST_DECODE_IMM
@@ -194,17 +194,17 @@ Note: Google Test filter = RV32I_Test.TEST_DECODE_IMM
 [----------] Global test environment set-up.
 [----------] 1 test from RV32I_Test
 [ RUN      ] RV32I_Test.TEST_DECODE_IMM
-[       OK ] RV32I_Test.TEST_DECODE_IMM (8 ms)
-[----------] 1 test from RV32I_Test (8 ms total)
+[       OK ] RV32I_Test.TEST_DECODE_IMM (3 ms)
+[----------] 1 test from RV32I_Test (3 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (9 ms total)
+[==========] 1 test from 1 test suite ran. (3 ms total)
 [  PASSED  ] 1 test.
 <end of output>
-Test time =   0.04 sec
+Test time =   0.02 sec
 ----------------------------------------------------------
 Test Passed.
-"RV32I_Test.TEST_DECODE_IMM" end time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_DECODE_IMM" end time: Oct 26 20:35 MSK
 "RV32I_Test.TEST_DECODE_IMM" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -212,7 +212,7 @@ Test Passed.
 9/13 Test: RV32I_Test.TEST_DECODE_OP
 Command: "/home/julia/projects/RV32I-Interpreter/build/test/test" "--gtest_filter=RV32I_Test.TEST_DECODE_OP" "--gtest_also_run_disabled_tests"
 Directory: /home/julia/projects/RV32I-Interpreter/build/test
-"RV32I_Test.TEST_DECODE_OP" start time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_DECODE_OP" start time: Oct 26 20:35 MSK
 Output:
 ----------------------------------------------------------
 Note: Google Test filter = RV32I_Test.TEST_DECODE_OP
@@ -220,17 +220,17 @@ Note: Google Test filter = RV32I_Test.TEST_DECODE_OP
 [----------] Global test environment set-up.
 [----------] 1 test from RV32I_Test
 [ RUN      ] RV32I_Test.TEST_DECODE_OP
-[       OK ] RV32I_Test.TEST_DECODE_OP (8 ms)
-[----------] 1 test from RV32I_Test (8 ms total)
+[       OK ] RV32I_Test.TEST_DECODE_OP (3 ms)
+[----------] 1 test from RV32I_Test (3 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (8 ms total)
+[==========] 1 test from 1 test suite ran. (3 ms total)
 [  PASSED  ] 1 test.
 <end of output>
-Test time =   0.04 sec
+Test time =   0.02 sec
 ----------------------------------------------------------
 Test Passed.
-"RV32I_Test.TEST_DECODE_OP" end time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_DECODE_OP" end time: Oct 26 20:35 MSK
 "RV32I_Test.TEST_DECODE_OP" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -238,7 +238,7 @@ Test Passed.
 10/13 Test: RV32I_Test.TEST_DECODE_BRANCH
 Command: "/home/julia/projects/RV32I-Interpreter/build/test/test" "--gtest_filter=RV32I_Test.TEST_DECODE_BRANCH" "--gtest_also_run_disabled_tests"
 Directory: /home/julia/projects/RV32I-Interpreter/build/test
-"RV32I_Test.TEST_DECODE_BRANCH" start time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_DECODE_BRANCH" start time: Oct 26 20:35 MSK
 Output:
 ----------------------------------------------------------
 Note: Google Test filter = RV32I_Test.TEST_DECODE_BRANCH
@@ -246,17 +246,17 @@ Note: Google Test filter = RV32I_Test.TEST_DECODE_BRANCH
 [----------] Global test environment set-up.
 [----------] 1 test from RV32I_Test
 [ RUN      ] RV32I_Test.TEST_DECODE_BRANCH
-[       OK ] RV32I_Test.TEST_DECODE_BRANCH (8 ms)
-[----------] 1 test from RV32I_Test (8 ms total)
+[       OK ] RV32I_Test.TEST_DECODE_BRANCH (4 ms)
+[----------] 1 test from RV32I_Test (4 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (8 ms total)
+[==========] 1 test from 1 test suite ran. (4 ms total)
 [  PASSED  ] 1 test.
 <end of output>
-Test time =   0.04 sec
+Test time =   0.02 sec
 ----------------------------------------------------------
 Test Passed.
-"RV32I_Test.TEST_DECODE_BRANCH" end time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_DECODE_BRANCH" end time: Oct 26 20:35 MSK
 "RV32I_Test.TEST_DECODE_BRANCH" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -264,7 +264,7 @@ Test Passed.
 11/13 Test: RV32I_Test.TEST_DECODE_JALR
 Command: "/home/julia/projects/RV32I-Interpreter/build/test/test" "--gtest_filter=RV32I_Test.TEST_DECODE_JALR" "--gtest_also_run_disabled_tests"
 Directory: /home/julia/projects/RV32I-Interpreter/build/test
-"RV32I_Test.TEST_DECODE_JALR" start time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_DECODE_JALR" start time: Oct 26 20:35 MSK
 Output:
 ----------------------------------------------------------
 Note: Google Test filter = RV32I_Test.TEST_DECODE_JALR
@@ -272,17 +272,17 @@ Note: Google Test filter = RV32I_Test.TEST_DECODE_JALR
 [----------] Global test environment set-up.
 [----------] 1 test from RV32I_Test
 [ RUN      ] RV32I_Test.TEST_DECODE_JALR
-[       OK ] RV32I_Test.TEST_DECODE_JALR (8 ms)
-[----------] 1 test from RV32I_Test (8 ms total)
+[       OK ] RV32I_Test.TEST_DECODE_JALR (3 ms)
+[----------] 1 test from RV32I_Test (3 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (8 ms total)
+[==========] 1 test from 1 test suite ran. (3 ms total)
 [  PASSED  ] 1 test.
 <end of output>
-Test time =   0.04 sec
+Test time =   0.02 sec
 ----------------------------------------------------------
 Test Passed.
-"RV32I_Test.TEST_DECODE_JALR" end time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_DECODE_JALR" end time: Oct 26 20:35 MSK
 "RV32I_Test.TEST_DECODE_JALR" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -290,7 +290,7 @@ Test Passed.
 12/13 Test: RV32I_Test.TEST_DECODE_JAL
 Command: "/home/julia/projects/RV32I-Interpreter/build/test/test" "--gtest_filter=RV32I_Test.TEST_DECODE_JAL" "--gtest_also_run_disabled_tests"
 Directory: /home/julia/projects/RV32I-Interpreter/build/test
-"RV32I_Test.TEST_DECODE_JAL" start time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_DECODE_JAL" start time: Oct 26 20:35 MSK
 Output:
 ----------------------------------------------------------
 Note: Google Test filter = RV32I_Test.TEST_DECODE_JAL
@@ -298,17 +298,17 @@ Note: Google Test filter = RV32I_Test.TEST_DECODE_JAL
 [----------] Global test environment set-up.
 [----------] 1 test from RV32I_Test
 [ RUN      ] RV32I_Test.TEST_DECODE_JAL
-[       OK ] RV32I_Test.TEST_DECODE_JAL (8 ms)
-[----------] 1 test from RV32I_Test (8 ms total)
+[       OK ] RV32I_Test.TEST_DECODE_JAL (3 ms)
+[----------] 1 test from RV32I_Test (3 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (8 ms total)
+[==========] 1 test from 1 test suite ran. (3 ms total)
 [  PASSED  ] 1 test.
 <end of output>
-Test time =   0.04 sec
+Test time =   0.02 sec
 ----------------------------------------------------------
 Test Passed.
-"RV32I_Test.TEST_DECODE_JAL" end time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_DECODE_JAL" end time: Oct 26 20:35 MSK
 "RV32I_Test.TEST_DECODE_JAL" time elapsed: 00:00:00
 ----------------------------------------------------------
 
@@ -316,7 +316,7 @@ Test Passed.
 13/13 Test: RV32I_Test.TEST_DECODE_STORE
 Command: "/home/julia/projects/RV32I-Interpreter/build/test/test" "--gtest_filter=RV32I_Test.TEST_DECODE_STORE" "--gtest_also_run_disabled_tests"
 Directory: /home/julia/projects/RV32I-Interpreter/build/test
-"RV32I_Test.TEST_DECODE_STORE" start time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_DECODE_STORE" start time: Oct 26 20:35 MSK
 Output:
 ----------------------------------------------------------
 Note: Google Test filter = RV32I_Test.TEST_DECODE_STORE
@@ -324,18 +324,18 @@ Note: Google Test filter = RV32I_Test.TEST_DECODE_STORE
 [----------] Global test environment set-up.
 [----------] 1 test from RV32I_Test
 [ RUN      ] RV32I_Test.TEST_DECODE_STORE
-[       OK ] RV32I_Test.TEST_DECODE_STORE (8 ms)
-[----------] 1 test from RV32I_Test (8 ms total)
+[       OK ] RV32I_Test.TEST_DECODE_STORE (3 ms)
+[----------] 1 test from RV32I_Test (3 ms total)
 
 [----------] Global test environment tear-down
-[==========] 1 test from 1 test suite ran. (9 ms total)
+[==========] 1 test from 1 test suite ran. (3 ms total)
 [  PASSED  ] 1 test.
 <end of output>
-Test time =   0.04 sec
+Test time =   0.02 sec
 ----------------------------------------------------------
 Test Passed.
-"RV32I_Test.TEST_DECODE_STORE" end time: Oct 26 17:14 MSK
+"RV32I_Test.TEST_DECODE_STORE" end time: Oct 26 20:35 MSK
 "RV32I_Test.TEST_DECODE_STORE" time elapsed: 00:00:00
 ----------------------------------------------------------
 
-End testing: Oct 26 17:14 MSK
+End testing: Oct 26 20:35 MSK
