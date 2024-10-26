@@ -1,2 +1,0 @@
-/usr/bin/ar qc librv32i.a CMakeFiles/rv32i.dir/decode.cpp.o CMakeFiles/rv32i.dir/execute.cpp.o
-/usr/bin/ranlib librv32i.a
