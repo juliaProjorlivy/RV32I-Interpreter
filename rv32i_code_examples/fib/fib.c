@@ -16,7 +16,7 @@ int fib(int n, struct Fib pair)
 
 int main()
 {
-    int n = 10;
+    int n = 5;
     struct Fib initial_pair = {0, 1};
     int result = fib(n, initial_pair);
     return result;

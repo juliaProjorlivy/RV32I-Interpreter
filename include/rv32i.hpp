@@ -8,7 +8,7 @@ const std::uint8_t regsize = 0b11111;
 typedef std::int32_t reg_t;
 typedef std::int32_t imm_t;
 typedef std::uint32_t addr_t;
-typedef std::int8_t mem_t;
+typedef std::int32_t mem_t;
 typedef std::int8_t byte_t;
 typedef std::int16_t half_t;
 typedef std::int32_t word_t;
@@ -56,7 +56,7 @@ namespace I
     enum class funct3 : std::uint8_t
     {
         ECALL  = 0b000,
-        EBREAK  = 0b001,
+        EBREAK = 0b001,
     };}
 
     //TODO:FINISH FOR SHIFTS
@@ -105,9 +105,7 @@ namespace S
         SB = 0b000,
         SH = 0b001,
         SW = 0b010,
-    };}
-
-    imm_t getImm(reg_t instr);
+    };} imm_t getImm(reg_t instr);
 }
 
 namespace U

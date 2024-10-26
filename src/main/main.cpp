@@ -17,7 +17,8 @@ void do_program(int Ninstr, Memory *mem, addr_t entry_point = 0)
 
     Cpu cpu{mem, entry_point};
 
-    for(int j = 0; j < Ninstr; ++j)
+    // for(int j = 0; j < Ninstr; ++j)
+    while(!cpu.isdone())
     {
         reg_t command = cpu.fetch();
         Instr instr = decode(command);

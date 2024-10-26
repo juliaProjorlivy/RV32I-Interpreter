@@ -26,7 +26,7 @@ public:
 
 class Register_X2 : public Register
 {
-    static const reg_t stack_start = 0x0000effc;
+    static const reg_t stack_start = 0x000aeffc;
 public:
     Register_X2 () : Register{2, stack_start} {}
 };
@@ -35,7 +35,7 @@ class Memory
 {
 private:
     // static const std::size_t MEMSIZE = 0xffffffff;
-    static const std::size_t MEMSIZE = 0x000fffff;
+    static const std::size_t MEMSIZE = 0x00ffffff;
     std::size_t MemSize;
     mem_t *data;
 public:
