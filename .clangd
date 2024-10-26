@@ -1,2 +1,0 @@
-CompileFlags:
-  Add: [-I/usr/include/, -I/home/julia/projects/RV32I-Interpreter/include]
