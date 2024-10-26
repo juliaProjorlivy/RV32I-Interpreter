@@ -11,7 +11,7 @@ To build:
 cmake -S . -B build [<options>]
 cmake --build build
 ```
-It takes one argument - rv32i elf file . There is an example in `rv32i\_code\_examples/fib/`   
+It takes one argument - rv32i elf file . There is an example in `rv32i/code/examples/fib/`   
 T run:   
 ```
 ./build/src/main/main some_file
