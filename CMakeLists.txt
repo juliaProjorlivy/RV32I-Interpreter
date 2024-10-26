@@ -9,7 +9,7 @@ if(RUN_DEBUG)
 message(STATUS "Compile with debug flags...")
 set(CMAKE_CXX_FLAGS "-D _DEBUG -ggdb3 -O0 -Wall -Wextra -Wunused -Wpedantic -Wshadow -fsanitize=address,alignment,bool,bounds,enum,float-cast-overflow,float-divide-by-zero,integer-divide-by-zero,leak,nonnull-attribute,null,object-size,return,returns-nonnull-attribute,shift,signed-integer-overflow,undefined,unreachable,vla-bound,vptr")
 else()
-set(CMAKE_CXX_FLAGS "-O2 -Wall")
+set(CMAKE_CXX_FLAGS "-Wall")
 endif()
 
 add_subdirectory(include)
