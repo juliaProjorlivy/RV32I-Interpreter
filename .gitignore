@@ -32,4 +32,4 @@ build/*
 *.out
 *.app
 
-.clangd
+*.clangd
