@@ -15,6 +15,7 @@ public:
 
     reg_t getVal() const {return val;}
     virtual void setVal(int val_){val = val_;}
+    virtual ~Register() = default;
 };
 
 class Register_X0 : public Register
@@ -22,6 +23,7 @@ class Register_X0 : public Register
 public:
     Register_X0 () : Register{0, 0} {}
     virtual void setVal(int val_) { (void)val_;};
+    virtual ~Register_X0() = default;
 };
 
 class Register_X2 : public Register
@@ -29,12 +31,12 @@ class Register_X2 : public Register
     static const reg_t stack_start = 0x000aeffc;
 public:
     Register_X2 () : Register{2, stack_start} {}
+    virtual ~Register_X2() = default;
 };
 
 class Memory
 {
 private:
-    // static const std::size_t MEMSIZE = 0xffffffff;
     static const std::size_t MEMSIZE = 0x00ffffff;
     std::size_t MemSize;
     mem_t *data;
@@ -47,14 +49,12 @@ public:
     template<typename Value_t>
     reg_t load(addr_t addr) const
     {
-        // if (addr >= MemSize) {addr -= STORE_OFFSET;}
         return (reg_t)(*(Value_t *)(data + addr));
     }
 
     template<typename Store_t, typename Value_t>
     void store(addr_t addr, Value_t val)
     {
-        // if (addr >= MemSize) {addr -= STORE_OFFSET;}
         *((Store_t *)(data + addr)) = val;
     }
 };
@@ -64,29 +64,38 @@ class Cpu
 private:
     static const int NRegs = 32;
     reg_t pc;
-    Register regs[NRegs] {};
+    Register *regs[NRegs] {};
     Memory *mem {};
     bool done {false};
 
 public:
     Cpu (Memory *mem_, addr_t entry = 0) : pc(entry), mem(mem_)
     {
-        regs[0] = Register_X0();
-        regs[2] = Register_X2();
+        regs[0] = new Register_X0();
+        regs[1] = new Register();
+        regs[2] = new Register_X2();
         for (int i = 3; i < NRegs; ++i)
         {
-            regs[i] = Register(i);
+            regs[i] = new Register(i);
         }
     }
-    ~Cpu () = default;
+    ~Cpu ()
+    {
+        for(auto reg : regs)
+        {
+            delete reg;
+        }
+    }
+    Cpu(Cpu &) = delete;
+    Cpu(Cpu &&cpu) = delete;
 
     bool isdone() const {return done;}
     void advancePc(std::size_t step = sizeof(reg_t)) {pc += step;}
     reg_t getPc() const {return pc;}
     void setPc(reg_t val) {pc = val;}
 
-    void setReg(int ireg, reg_t value) {regs[ireg].setVal(value);}
-    reg_t getReg(int ireg) const {return regs[ireg].getVal();}
+    void setReg(int ireg, reg_t value) {regs[ireg]->setVal(value);}
+    reg_t getReg(int ireg) const {return regs[ireg]->getVal();}
     void setDone(bool val = 1) {done = val;}
 
     template<typename Value_t>
@@ -107,7 +116,7 @@ public:
         os << "pc: " << pc << std::endl;
         for (int i = 0; i < NRegs; i++)
         {
-            os << "x" << i << " = " << regs[i].getVal() << std::endl;
+            os << "x" << i << " = " << regs[i]->getVal() << std::endl;
         }
     }
 
