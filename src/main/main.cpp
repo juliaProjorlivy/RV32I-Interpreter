@@ -60,10 +60,6 @@ int main(int argc, char* argv[])
     addr_t seg_header_size = reader.get_segment_entry_size();
     addr_t code_start_offset = seg_offset + seg_num * seg_header_size;
 
-    // std::cout << "segment offset " << seg_offset << std::endl;
-    // std::cout << "code start offset " << code_start_offset << std::endl;
-    // std::cout << "entry point " << entry_point << std::endl;
-
     Memory mem {};
 
     int Ninstr = 0;

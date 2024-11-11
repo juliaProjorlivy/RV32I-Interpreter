@@ -62,7 +62,7 @@ void executeImm (Cpu &cpu, Instr &instr)
                 }
                 break;
             }
-        //TODO: THROW AND ERROR
+        //TODO: THROW AN ERROR
         default: {}
     }
     cpu.advancePc();
@@ -205,12 +205,12 @@ void executeLoad (Cpu &cpu, Instr &instr)
             }
         case funct3::LBU:
             {
-                cpu.setReg(instr.rd_id, (0x0000ffff & cpu.load<word_t>(instr.imm + cpu.getReg(instr.rs1_id))));
+                cpu.setReg(instr.rd_id, (0x0000ffff & cpu.load<byte_t>(instr.imm + cpu.getReg(instr.rs1_id))));
                 break;
             }
         case funct3::LHU:
             {
-                cpu.setReg(instr.rd_id, (0x0000ffff & cpu.load<word_t>(instr.imm + cpu.getReg(instr.rs1_id))));
+                cpu.setReg(instr.rd_id, (0x0000ffff & cpu.load<half_t>(instr.imm + cpu.getReg(instr.rs1_id))));
                 break;
             }
         case funct3::LWU:

@@ -105,7 +105,9 @@ namespace S
         SB = 0b000,
         SH = 0b001,
         SW = 0b010,
-    };} imm_t getImm(reg_t instr);
+    };}
+
+    imm_t getImm(reg_t instr);
 }
 
 namespace U

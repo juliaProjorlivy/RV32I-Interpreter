@@ -39,7 +39,6 @@ Instr decode(reg_t instr_)
     Opcode opcode = getOpcode(instr_);
     switch (opcode)
     {
-        //TODO: WRITE THE REST
         case Opcode::Imm:
             {
                 instr.funct3 = getfunct3(instr_);
