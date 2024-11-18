@@ -222,6 +222,8 @@ void executeLoad (Cpu &cpu, Instr &instr)
     cpu.advancePc();
 }
 
+//TODO: CONST
+//TODO: CLANG FORMAT
 void executeStore (Cpu &cpu, Instr &instr)
 {
     using namespace S::Store;
@@ -254,8 +256,8 @@ void executeLui(Cpu &cpu, Instr &instr)
 
 void executeAuipc(Cpu &cpu, Instr &instr)
 {
-    cpu.advancePc(instr.imm);
-    cpu.setReg(instr.rd_id, cpu.getPc());
+    cpu.setReg(instr.rd_id, cpu.getPc() + instr.imm);
+    cpu.advancePc();
 }
 
 void executeJalr(Cpu &cpu, Instr &instr)
@@ -270,9 +272,8 @@ void executeJal(Cpu &cpu, Instr &instr)
     cpu.setReg(instr.rd_id, cpu.getPc() + sizeof(addr_t));
     cpu.advancePc(instr.imm);
 }
-void executeSystem(Cpu &cpu, Instr &instr)
+void executeSystem(Cpu &cpu,[[maybe_unused]] Instr &instr)
 {
-    (void)instr;
     cpu.setDone();
 }
 

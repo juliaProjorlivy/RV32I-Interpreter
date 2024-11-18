@@ -5,13 +5,13 @@
 
 const std::uint8_t regsize = 0b11111;
 
-typedef std::int32_t reg_t;
-typedef std::int32_t imm_t;
-typedef std::uint32_t addr_t;
-typedef std::int32_t mem_t;
-typedef std::int8_t byte_t;
-typedef std::int16_t half_t;
-typedef std::int32_t word_t;
+using addr_t = uint32_t;
+using mem_t  = uint8_t ;
+using reg_t  = int32_t ;
+using imm_t  = int32_t ;
+using byte_t = int8_t  ;
+using half_t = int16_t ;
+using word_t = int32_t ;
 
 enum class Opcode : std::uint8_t
 {

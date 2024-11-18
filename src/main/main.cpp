@@ -4,13 +4,14 @@
 #include <elfio/elf_types.hpp>
 #include <elfio/elfio_segment.hpp>
 
-void write_to_mem(Memory &mem, int Ninstr, const char *ptr, addr_t entry = 0)
+void write_to_mem(Memory &mem, int Ninstr, const char *data_ptr, addr_t entry = 0)
 {
     for (int j = 0; j < Ninstr; ++j)
     {
-        mem.store<addr_t>(entry + j * sizeof(addr_t), *(reg_t *)(ptr + j * sizeof(reg_t)));
+        mem.store<addr_t>(entry + j * sizeof(addr_t), *(reg_t *)(data_ptr + j * sizeof(reg_t)));
     }
 }
+
 
 void do_program(int Ninstr, Memory *mem, addr_t entry_point = 0)
 {
