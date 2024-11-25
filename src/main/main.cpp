@@ -8,22 +8,43 @@ void write_to_mem(Memory &mem, int Ninstr, const char *data_ptr, addr_t entry = 
 {
     for (int j = 0; j < Ninstr; ++j)
     {
-        mem.store<addr_t>(entry + j * sizeof(addr_t), *(reg_t *)(data_ptr + j * sizeof(reg_t)));
+        // mem.store<addr_t>(entry + j * sizeof(addr_t), *(reg_t *)(data_ptr + j * sizeof(reg_t)));
+        mem.store<addr_t>(entry + j * sizeof(addr_t), *(reinterpret_cast<const reg_t *>(data_ptr + j * sizeof(reg_t))));
     }
 }
 
-
 void do_program(int Ninstr, Memory *mem, addr_t entry_point = 0)
 {
-
     Cpu cpu{mem, entry_point};
 
-    // for(int j = 0; j < Ninstr; ++j)
     while(!cpu.isdone())
     {
-        reg_t command = cpu.fetch();
-        Instr instr = decode(command);
-        execute (cpu, instr);
+        // reg_t command = cpu.fetch();
+        if(auto basic_block= cpu.bb_translated.find(cpu.getPc()); basic_block != cpu.bb_translated.end())
+        {
+            (basic_block->second)();
+            continue;
+        }
+        else if(auto cache_block= cpu.bb_cache.find(cpu.getPc());
+                cache_block != cpu.bb_cache.end() &&
+                cache_block->second.size() >= BB_THRESHOLD)
+        {
+            auto func = translate(cpu, cache_block->second);
+            if(func)
+            {
+                cpu.bb_translated.emplace(cpu.getPc(), func);
+                func();
+                continue;
+            }
+            else
+            {
+                std::cout << "TRNASLATION ERROR\n";
+                return;
+            }
+            //TODO: HANDLE AN ERROR
+        }
+        auto instrs = lookup(cpu, cpu.getPc());
+        interpret_block (cpu, instrs);
     }
 
     cpu.dump(std::cout);

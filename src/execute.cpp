@@ -1,6 +1,14 @@
 #include "rv32i.hpp"
 #include "cpu.hpp"
 
+void interpret_block(Cpu &cpu, std::vector<Instr> instrs)
+{
+    for(auto instr : instrs)
+    {
+        instr.exec(cpu, instr);
+    }
+}
+
 void execute (Cpu &cpu, Instr &instr)
 {
     instr.exec(cpu, instr);

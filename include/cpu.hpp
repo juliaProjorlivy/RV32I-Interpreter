@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "asmjit/core/jitruntime.h"
+#include "asmjit/x86/x86compiler.h"
 #include "rv32i.hpp"
 
 class Register
@@ -15,7 +16,7 @@ private:
     int id;
     reg_t val;
 public:
-    Register (int id_ = 1, reg_t val_ = 0): id{id_}, val{val_} {}
+    Register (int id_, reg_t val_ = 0): id{id_}, val{val_} {}
     int getId() const {return id;}
 
     reg_t getVal() const {return val;}
@@ -76,12 +77,12 @@ public:
     asmjit::JitRuntime rt;
     std::unordered_map<addr_t, std::vector<struct Instr>> bb_cache {};
     typedef  void (*func_t)(void);
-    std::unordered_map<addr_t, func_t> bb_translated {}; //translated block function and pc offset after that bb
+    std::unordered_map<addr_t, func_t> bb_translated {};
 
     Cpu (Memory *mem_, addr_t entry = 0) : pc(entry), mem(mem_)
     {
         regs[0] = new Register_X0();
-        regs[1] = new Register();
+        regs[1] = new Register(1);
         regs[2] = new Register_X2();
         for (int i = 3; i < NRegs; ++i)
         {
@@ -99,7 +100,7 @@ public:
     Cpu(Cpu &) = delete;
     Cpu(Cpu &&cpu) = delete;
 
-    //TODO: NOEXEPT
+    //TODO: NOEXCEPT
     bool isdone() const {return done;}
     //TODO: INSTR SIZE AS ARG
     void advancePc(std::size_t step = sizeof(reg_t)) {pc += step;}
@@ -135,6 +136,7 @@ public:
     }
 
     reg_t fetch() {return mem->load<reg_t>(pc);}
+    reg_t fetch(addr_t addr) {return mem->load<reg_t>(addr);}
 };
 
 struct Instr
@@ -163,6 +165,40 @@ void executeAuipc(Cpu &cpu, Instr &instr);
 void executeJalr(Cpu &cpu, Instr &instr);
 void executeJal(Cpu &cpu, Instr &instr);
 void execute(Cpu &cpu, Instr &instr);
+void interpret_block(Cpu &cpu, std::vector<Instr> instrs);
+
+//translateion
+const size_t BB_AVERAGE_SIZE = 12;
+const size_t BB_THRESHOLD = 12;
+bool is_bb_end(Instr &instr);
+struct TranslationAttr
+{
+    asmjit::x86::Compiler &cc;
+    asmjit::x86::Gp &dst1;
+    asmjit::x86::Gp &dst2;
+    asmjit::x86::Gp &ret;
+};
+template<typename T>
+asmjit::x86::Mem toDwordPtr(T arg);
+
+template<typename ValueT>
+reg_t LoadWrapper(Cpu *cpu, addr_t addr);
+
+template<typename StoreT>
+void StoreWrapper(Cpu *cpu, addr_t addr, reg_t val);
+
+void translateOp(Cpu &cpu, Instr &instr, TranslationAttr &attr)    ;
+void translateImm(Cpu &cpu, Instr &instr, TranslationAttr &attr)   ;
+void translateBranch(Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateLoad (Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateStore(Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateJalr(Cpu &cpu, Instr &instr, TranslationAttr &attr) ;
+void translateJal(Cpu &cpu, Instr &instr, TranslationAttr &attr)  ;
+void translateAuipc(Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateLui(Cpu &cpu, Instr &instr, TranslationAttr &attr)  ;
+
+std::vector<Instr> lookup(Cpu &cpu, addr_t addr);
+Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb);
 
 #endif
 
