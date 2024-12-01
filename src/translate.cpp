@@ -49,11 +49,21 @@ std::vector<Instr> lookup(Cpu &cpu, addr_t addr)
     return basic_block_res->second;
 }
 
-template<typename T>
-asmjit::x86::Mem toDwordPtr(T arg)
+// template<typename T>
+// asmjit::x86::Mem toDwordPtr(T arg)
+// {
+//     return asmjit::x86::dword_ptr((uint64_t)(arg));
+// }
+
+asmjit::x86::Mem toDwordPtr(Cpu &cpu)
 {
-    return asmjit::x86::dword_ptr((uint64_t)(arg));
+    return asmjit::x86::dword_ptr((uint64_t)(cpu.pc_));
 }
+asmjit::x86::Mem toDwordPtr(Register &reg)
+{
+    return asmjit::x86::dword_ptr((uint64_t)(&reg.self_->val_));
+}
+
 
 void translateOp(Cpu &cpu, Instr &instr, TranslationAttr &attr)
 {
@@ -146,6 +156,90 @@ void translateOp(Cpu &cpu, Instr &instr, TranslationAttr &attr)
     }
 }
 
+void translateImm_v2(Instr &instr, Cpu &cpu, TranslationAttr &attr)
+{
+    switch ((I::Imm::funct3)instr.funct3)
+    {
+        // x0!!!!!!
+        case I::Imm::funct3::ADDI:
+            {
+                attr.cc.mov(attr.dst1, toDwordPtr((cpu.getRegPtr(instr.rs1_id))));
+                attr.cc.add(attr.dst1, instr.imm);
+                attr.cc.mov( toDwordPtr((cpu.getRegPtr(instr.rd_id))), attr.dst1);
+
+                break;
+                //TODO: ADVANCE PC FOR ALL BLOCK
+                //advance pc
+                // attr.cc.mov(attr.dst1, toDwordPtr(cpu.getPcPtr()));
+                // attr.cc.add(attr.dst1, sizeof(addr_t));
+                // attr.cc.mov(toDwordPtr(cpu.getPcPtr()), attr.dst1);
+            }
+        case I::Imm::funct3::ANDI:
+            {
+                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
+                attr.cc.and_(attr.dst1, instr.imm);
+                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
+                break;
+            }
+        case I::Imm::funct3::ORI:
+            {
+                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
+                attr.cc.or_(attr.dst1, instr.imm);
+                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
+                break;
+            }
+        case I::Imm::funct3::XORI:
+            {
+                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
+                attr.cc.xor_(attr.dst1, instr.imm);
+                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
+                break;
+            }
+        case I::Imm::funct3::SLTI:
+            {
+                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
+                attr.cc.cmp(attr.dst1, instr.imm);
+                attr.cc.setl(attr.dst1);
+                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
+                break;
+            }
+        case I::Imm::funct3::SLTIU:
+            {
+                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
+                attr.cc.cmp(attr.dst1, instr.imm);
+                attr.cc.setb(attr.dst1);
+                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
+                break;
+            }
+        case I::Imm::funct3::SLLI:
+            {
+                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
+                attr.cc.shl(attr.dst1, instr.imm);
+                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
+                break;
+            }
+        case I::Imm::funct3::SRLI:
+            {
+                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
+                //SRAI:
+                if (instr.imm >> 5)
+                {
+                    attr.cc.sar(attr.dst1, instr.imm);
+                }
+                //SRLI
+                else
+                {
+                    attr.cc.shr(attr.dst1, instr.imm);
+                }
+                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
+                break;
+            }
+        default: {return;}
+        //TODO: THROW AN ERROR
+    }
+
+}
+
 void translateImm(Cpu &cpu, Instr &instr, TranslationAttr &attr)
 {
     switch ((I::Imm::funct3)instr.funct3)
@@ -153,9 +247,9 @@ void translateImm(Cpu &cpu, Instr &instr, TranslationAttr &attr)
         // x0!!!!!!
         case I::Imm::funct3::ADDI:
             {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
+                attr.cc.mov(attr.dst1, toDwordPtr((cpu.getRegPtr(instr.rs1_id))));
                 attr.cc.add(attr.dst1, instr.imm);
-                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
+                attr.cc.mov( toDwordPtr((cpu.getRegPtr(instr.rd_id))), attr.dst1);
 
                 break;
                 //TODO: ADVANCE PC FOR ALL BLOCK
@@ -251,6 +345,9 @@ void translateBranch(Cpu &cpu, Instr &instr, TranslationAttr &attr)
                 attr.cc.add(toDwordPtr(cpu.getPcPtr()), instr.imm);
 
                 attr.cc.bind(L_END);
+                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getPcPtr()));
+                attr.cc.add(attr.dst2, attr.dst1);
+                attr.cc.mov(toDwordPtr(cpu.getPcPtr()), attr.dst2);
 
                 return;
             }
@@ -271,7 +368,10 @@ void translateBranch(Cpu &cpu, Instr &instr, TranslationAttr &attr)
                 attr.cc.mov(attr.dst1, instr.imm);
 
                 attr.cc.bind(L_END);
-                attr.cc.add(toDwordPtr(cpu.getPcPtr()), attr.dst1);
+                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getPcPtr()));
+                attr.cc.add(attr.dst2, attr.dst1);
+                attr.cc.mov(toDwordPtr(cpu.getPcPtr()), attr.dst2);
+
 
                 return;
             }
@@ -613,7 +713,10 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
                 }
             case Opcode::Branch:
                 {
-                    cc.add(toDwordPtr(cpu.getPcPtr()), icount * sizeof(addr_t));
+                    cc.mov(attr.dst2, icount * sizeof(addr_t));
+                    cc.mov(attr.dst1, toDwordPtr(cpu.getPcPtr()));
+                    cc.add(attr.dst1, attr.dst2);
+                    cc.mov(toDwordPtr(cpu.getPcPtr()), attr.dst1);
                     icount = 0;
                     translateBranch(cpu, instr, attr);
                     break;

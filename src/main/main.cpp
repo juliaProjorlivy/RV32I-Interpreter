@@ -25,21 +25,23 @@ void do_program(int Ninstr, Memory *mem, addr_t entry_point = 0)
             (basic_block->second)();
             continue;
         }
-        else if(auto cache_block= cpu.bb_cache.find(cpu.getPc());
-                cache_block != cpu.bb_cache.end() &&
-                cache_block->second.size() >= BB_THRESHOLD)
+        else if(cpu.bb_cache.count(cpu.getPc()))
         {
-            auto func = translate(cpu, cache_block->second);
-            if(func)
+            auto cache_block= cpu.bb_cache.find(cpu.getPc());
+            if(cache_block->second.size() >= BB_THRESHOLD)
             {
-                cpu.bb_translated.emplace(cpu.getPc(), func);
-                func();
-                continue;
-            }
-            else
-            {
-                std::cout << "TRNASLATION ERROR\n";
-                return;
+                auto func = translate(cpu, cache_block->second);
+                if(func)
+                {
+                    cpu.bb_translated.emplace(cpu.getPc(), func);
+                    func();
+                    continue;
+                }
+                else
+                {
+                    std::cout << "TRNASLATION ERROR\n";
+                    return;
+                }
             }
             //TODO: HANDLE AN ERROR
         }
