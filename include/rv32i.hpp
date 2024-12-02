@@ -5,13 +5,15 @@
 
 const std::uint8_t regsize = 0b11111;
 
-using addr_t = uint32_t;
-using mem_t  = uint8_t ;
-using reg_t  = int32_t ;
-using imm_t  = int32_t ;
-using byte_t = int8_t  ;
-using half_t = int16_t ;
-using word_t = int32_t ;
+using addr_t = uint32_t ;
+using mem_t  = uint8_t  ;
+using reg_t  = int32_t  ;
+using imm_t  = int32_t  ;
+using byte_t = int8_t   ;
+using half_t = int16_t  ;
+using word_t = int32_t  ;
+using instr_t = uint32_t;
+const std::size_t RV32I_INTR_SIZE = 4;
 
 enum class Opcode : std::uint8_t
 {
@@ -50,7 +52,6 @@ namespace I
         LW  = 0b010,
         LBU = 0b100,
         LHU = 0b101,
-        LWU = 0b110,
     };}
     namespace System {
     enum class funct3 : std::uint8_t

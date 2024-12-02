@@ -125,6 +125,7 @@ Instr decode(reg_t instr_)
     }
 
     instr.opcode = opcode;
+    instr.size = RV32I_INTR_SIZE;
     return instr;
 }
 
@@ -148,7 +149,7 @@ imm_t S::getImm(reg_t instr)
 
 imm_t U::getImm(reg_t instr)
 {
-    imm_t imm = instr & 0xfffff000;
+    imm_t imm = (instr & 0xfffff000) >> 12;
     return imm;
 }
 

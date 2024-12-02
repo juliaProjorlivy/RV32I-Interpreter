@@ -70,3 +70,12 @@ TEST_F(RV32I_Test, TEST_DECODE_AUIPC)
     EXPECT_EQ(instr.rd_id, 3);
     EXPECT_EQ(instr.imm, 32);
 }
+
+TEST_F(RV32I_Test, TEST_DECODE_LUI)
+{
+    Instr instr = decode(INSTR_TO_TEST::lui_x3_32);
+    EXPECT_EQ(instr.opcode, Opcode::Lui);
+    EXPECT_EQ(instr.rd_id, 3);
+    EXPECT_EQ(instr.imm, 32);
+}
+

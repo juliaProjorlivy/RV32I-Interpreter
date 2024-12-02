@@ -90,3 +90,57 @@ TEST_F(RV32I_Test, TEST_EXECUTE_JALR)
     EXPECT_EQ(cpu->getReg(4), 8);
     EXPECT_EQ(cpu->getPc(), 40);
 }
+
+TEST_F(RV32I_Test, TEST_EXECUTE_AUIPC)
+{
+    cpu->setPc(0);
+    Instr instr = decode(INSTR_TO_TEST::auipc_x3_32);
+    execute( *cpu, instr);
+    EXPECT_EQ(cpu->getReg(3), (32 << 12));
+    EXPECT_EQ(cpu->getPc(), 4);
+}
+
+TEST_F(RV32I_Test, TEST_EXECUTE_LUI)
+{
+    cpu->setPc(0);
+    cpu->setReg(3, 0);
+    Instr instr = decode(INSTR_TO_TEST::lui_x3_32);
+    execute( *cpu, instr);
+    EXPECT_EQ(cpu->getReg(3), (32 << 12));
+    EXPECT_EQ(cpu->getPc(), 4);
+}
+
+TEST_F(RV32I_Test, TEST_EXECUTE_LOAD_STORE)
+{
+    cpu->setPc(0);
+    cpu->setReg(3, 77);
+    cpu->setReg(4,0);
+    Instr instr_store = decode(INSTR_TO_TEST::sw_x3_x4_32);
+    execute( *cpu, instr_store);
+    EXPECT_EQ(cpu->getReg(3), 77);
+    EXPECT_EQ(cpu->getReg(4), 0);
+    EXPECT_EQ(cpu->getPc(), 4);
+
+    cpu->setReg(3, 0);
+    Instr instr_load = decode(INSTR_TO_TEST::lw_x3_x4_32);
+    execute( *cpu, instr_load);
+    EXPECT_EQ(cpu->getReg(3), 77);
+    EXPECT_EQ(cpu->getReg(4), 0);
+    EXPECT_EQ(cpu->getPc(), 8);
+
+
+    cpu->setPc(0);
+    cpu->setReg(3, -77);
+    cpu->setReg(4,0);
+    execute( *cpu, instr_store);
+    EXPECT_EQ(cpu->getReg(3), -77);
+    EXPECT_EQ(cpu->getReg(4), 0);
+    EXPECT_EQ(cpu->getPc(), 4);
+
+    cpu->setReg(3, 0);
+    execute( *cpu, instr_load);
+    EXPECT_EQ(cpu->getReg(3), -77);
+    EXPECT_EQ(cpu->getReg(4), 0);
+    EXPECT_EQ(cpu->getPc(), 8);
+}
+

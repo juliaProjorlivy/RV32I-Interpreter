@@ -8,7 +8,6 @@ void write_to_mem(Memory &mem, int Ninstr, const char *data_ptr, addr_t entry = 
 {
     for (int j = 0; j < Ninstr; ++j)
     {
-        // mem.store<addr_t>(entry + j * sizeof(addr_t), *(reg_t *)(data_ptr + j * sizeof(reg_t)));
         mem.store<addr_t>(entry + j * sizeof(addr_t), *(reinterpret_cast<const reg_t *>(data_ptr + j * sizeof(reg_t))));
     }
 }

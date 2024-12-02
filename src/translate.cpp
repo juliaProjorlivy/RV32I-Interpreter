@@ -6,6 +6,7 @@
 #include "asmjit/x86/x86operand.h"
 #include "cpu.hpp"
 #include "rv32i.hpp"
+#include <cstdint>
 
 bool is_bb_end(Instr &instr)
 {
@@ -55,13 +56,13 @@ std::vector<Instr> lookup(Cpu &cpu, addr_t addr)
 //     return asmjit::x86::dword_ptr((uint64_t)(arg));
 // }
 
-asmjit::x86::Mem toDwordPtr(Cpu &cpu)
-{
-    return asmjit::x86::dword_ptr((uint64_t)(cpu.pc_));
-}
+// asmjit::x86::Mem toDwordPtr(Cpu &cpu)
+// {
+//     return asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_)));
+// }
 asmjit::x86::Mem toDwordPtr(Register &reg)
 {
-    return asmjit::x86::dword_ptr((uint64_t)(&reg.self_->val_));
+    return asmjit::x86::dword_ptr((uint64_t)(&(reg.self_->val_)));
 }
 
 
@@ -71,8 +72,6 @@ void translateOp(Cpu &cpu, Instr &instr, TranslationAttr &attr)
     {
         case R::Op::funct3::ADD:
             {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getRegPtr(instr.rs2_id)));
                 //SUB
                 if (instr.funct7)
                 {
@@ -83,63 +82,42 @@ void translateOp(Cpu &cpu, Instr &instr, TranslationAttr &attr)
                 {
                     attr.cc.add(attr.dst1, attr.dst2);
                 }
-                attr.cc.mov(toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
                 break;
             }
         case R::Op::funct3::AND:
             {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getRegPtr(instr.rs2_id)));
                 attr.cc.and_(attr.dst1, attr.dst2);
-                attr.cc.mov(toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
                 break;
             }
         case R::Op::funct3::OR:
             {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getRegPtr(instr.rs2_id)));
                 attr.cc.or_(attr.dst1, attr.dst2);
-                attr.cc.mov(toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
                 break;
             }
         case R::Op::funct3::XOR:
             {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getRegPtr(instr.rs2_id)));
                 attr.cc.xor_(attr.dst1, attr.dst2);
-                attr.cc.mov(toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
                 break;
             }
         case R::Op::funct3::SLT:
             {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getRegPtr(instr.rs2_id)));
                 attr.cc.cmp(attr.dst1, attr.dst2);
                 attr.cc.setl(attr.dst1);
-                attr.cc.mov(toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
                 break;
             }
         case R::Op::funct3::SLTU:
             {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getRegPtr(instr.rs2_id)));
                 attr.cc.cmp(attr.dst1, attr.dst2);
                 attr.cc.setb(attr.dst1);
-                attr.cc.mov(toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
                 break;
             }
         case R::Op::funct3::SLL:
             {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getRegPtr(instr.rs2_id)));
                 attr.cc.shl(attr.dst1, attr.dst2);
-                attr.cc.mov(toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
                 break;
             }
         case R::Op::funct3::SRL:
             {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getRegPtr(instr.rs2_id)));
                 //SRA
                 if (instr.funct7)
                 {
@@ -149,95 +127,10 @@ void translateOp(Cpu &cpu, Instr &instr, TranslationAttr &attr)
                 {
                     attr.cc.shr(attr.dst1, attr.dst2);
                 }
-                attr.cc.mov(toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
                 break;
             }
         default: {return;}
     }
-}
-
-void translateImm_v2(Instr &instr, Cpu &cpu, TranslationAttr &attr)
-{
-    switch ((I::Imm::funct3)instr.funct3)
-    {
-        // x0!!!!!!
-        case I::Imm::funct3::ADDI:
-            {
-                attr.cc.mov(attr.dst1, toDwordPtr((cpu.getRegPtr(instr.rs1_id))));
-                attr.cc.add(attr.dst1, instr.imm);
-                attr.cc.mov( toDwordPtr((cpu.getRegPtr(instr.rd_id))), attr.dst1);
-
-                break;
-                //TODO: ADVANCE PC FOR ALL BLOCK
-                //advance pc
-                // attr.cc.mov(attr.dst1, toDwordPtr(cpu.getPcPtr()));
-                // attr.cc.add(attr.dst1, sizeof(addr_t));
-                // attr.cc.mov(toDwordPtr(cpu.getPcPtr()), attr.dst1);
-            }
-        case I::Imm::funct3::ANDI:
-            {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.and_(attr.dst1, instr.imm);
-                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
-                break;
-            }
-        case I::Imm::funct3::ORI:
-            {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.or_(attr.dst1, instr.imm);
-                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
-                break;
-            }
-        case I::Imm::funct3::XORI:
-            {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.xor_(attr.dst1, instr.imm);
-                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
-                break;
-            }
-        case I::Imm::funct3::SLTI:
-            {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.cmp(attr.dst1, instr.imm);
-                attr.cc.setl(attr.dst1);
-                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
-                break;
-            }
-        case I::Imm::funct3::SLTIU:
-            {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.cmp(attr.dst1, instr.imm);
-                attr.cc.setb(attr.dst1);
-                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
-                break;
-            }
-        case I::Imm::funct3::SLLI:
-            {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.shl(attr.dst1, instr.imm);
-                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
-                break;
-            }
-        case I::Imm::funct3::SRLI:
-            {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                //SRAI:
-                if (instr.imm >> 5)
-                {
-                    attr.cc.sar(attr.dst1, instr.imm);
-                }
-                //SRLI
-                else
-                {
-                    attr.cc.shr(attr.dst1, instr.imm);
-                }
-                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
-                break;
-            }
-        default: {return;}
-        //TODO: THROW AN ERROR
-    }
-
 }
 
 void translateImm(Cpu &cpu, Instr &instr, TranslationAttr &attr)
@@ -247,64 +140,43 @@ void translateImm(Cpu &cpu, Instr &instr, TranslationAttr &attr)
         // x0!!!!!!
         case I::Imm::funct3::ADDI:
             {
-                attr.cc.mov(attr.dst1, toDwordPtr((cpu.getRegPtr(instr.rs1_id))));
                 attr.cc.add(attr.dst1, instr.imm);
-                attr.cc.mov( toDwordPtr((cpu.getRegPtr(instr.rd_id))), attr.dst1);
-
                 break;
-                //TODO: ADVANCE PC FOR ALL BLOCK
-                //advance pc
-                // attr.cc.mov(attr.dst1, toDwordPtr(cpu.getPcPtr()));
-                // attr.cc.add(attr.dst1, sizeof(addr_t));
-                // attr.cc.mov(toDwordPtr(cpu.getPcPtr()), attr.dst1);
             }
         case I::Imm::funct3::ANDI:
             {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
                 attr.cc.and_(attr.dst1, instr.imm);
-                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
                 break;
             }
         case I::Imm::funct3::ORI:
             {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
                 attr.cc.or_(attr.dst1, instr.imm);
-                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
                 break;
             }
         case I::Imm::funct3::XORI:
             {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
                 attr.cc.xor_(attr.dst1, instr.imm);
-                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
                 break;
             }
         case I::Imm::funct3::SLTI:
             {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
                 attr.cc.cmp(attr.dst1, instr.imm);
                 attr.cc.setl(attr.dst1);
-                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
                 break;
             }
         case I::Imm::funct3::SLTIU:
             {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
                 attr.cc.cmp(attr.dst1, instr.imm);
                 attr.cc.setb(attr.dst1);
-                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
                 break;
             }
         case I::Imm::funct3::SLLI:
             {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
                 attr.cc.shl(attr.dst1, instr.imm);
-                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
                 break;
             }
         case I::Imm::funct3::SRLI:
             {
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
                 //SRAI:
                 if (instr.imm >> 5)
                 {
@@ -315,143 +187,47 @@ void translateImm(Cpu &cpu, Instr &instr, TranslationAttr &attr)
                 {
                     attr.cc.shr(attr.dst1, instr.imm);
                 }
-                attr.cc.mov( toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
                 break;
             }
         default: {return;}
         //TODO: THROW AN ERROR
     }
+
 }
 
-void translateBranch(Cpu &cpu, Instr &instr, TranslationAttr &attr)
+void translateBranch(Instr &instr, TranslationAttr &attr)
 {
     using namespace B::Branch;
     switch ((B::Branch::funct3)instr.funct3)
     {
         case B::Branch::funct3::BEQ:
             {
-                asmjit::Label L_BRANCH = attr.cc.newLabel();
-                asmjit::Label L_END = attr.cc.newLabel();
-
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getRegPtr(instr.rs2_id)));
-
-                attr.cc.cmp(attr.dst1, attr.dst2);
-                attr.cc.je(L_BRANCH);
-                attr.cc.add(toDwordPtr(cpu.getPcPtr()), sizeof(addr_t));
-                attr.cc.jmp(L_END);
-
-                attr.cc.bind(L_BRANCH);
-                attr.cc.add(toDwordPtr(cpu.getPcPtr()), instr.imm);
-
-                attr.cc.bind(L_END);
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getPcPtr()));
-                attr.cc.add(attr.dst2, attr.dst1);
-                attr.cc.mov(toDwordPtr(cpu.getPcPtr()), attr.dst2);
-
+                attr.cc.je(*attr.L_BRANCH);
                 return;
             }
         case B::Branch::funct3::BNE:
             {
-                asmjit::Label L_BRANCH = attr.cc.newLabel();
-                asmjit::Label L_END = attr.cc.newLabel();
-
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getRegPtr(instr.rs2_id)));
-
-                attr.cc.cmp(attr.dst1, attr.dst2);
-                attr.cc.jne(L_BRANCH);
-                attr.cc.mov(attr.dst1, sizeof(addr_t));
-                attr.cc.jmp(L_END);
-
-                attr.cc.bind(L_BRANCH);
-                attr.cc.mov(attr.dst1, instr.imm);
-
-                attr.cc.bind(L_END);
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getPcPtr()));
-                attr.cc.add(attr.dst2, attr.dst1);
-                attr.cc.mov(toDwordPtr(cpu.getPcPtr()), attr.dst2);
-
-
+                attr.cc.jne(*attr.L_BRANCH);
                 return;
             }
         case B::Branch::funct3::BLT:
             {
-                asmjit::Label L_BRANCH = attr.cc.newLabel();
-                asmjit::Label L_END = attr.cc.newLabel();
-
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getRegPtr(instr.rs2_id)));
-
-                attr.cc.cmp(attr.dst1, attr.dst2);
-                attr.cc.jl(L_BRANCH);
-                attr.cc.add(toDwordPtr(cpu.getPcPtr()), sizeof(addr_t));
-                attr.cc.jmp(L_END);
-
-                attr.cc.bind(L_BRANCH);
-                attr.cc.add(toDwordPtr(cpu.getPcPtr()), instr.imm);
-
-                attr.cc.bind(L_END);
-
+                attr.cc.jl(*attr.L_BRANCH);
                 return;
             }
         case B::Branch::funct3::BGE:
             {
-                asmjit::Label L_BRANCH = attr.cc.newLabel();
-                asmjit::Label L_END = attr.cc.newLabel();
-
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getRegPtr(instr.rs2_id)));
-
-                attr.cc.cmp(attr.dst1, attr.dst2);
-                attr.cc.jg(L_BRANCH);
-                attr.cc.add(toDwordPtr(cpu.getPcPtr()), sizeof(addr_t));
-                attr.cc.jmp(L_END);
-
-                attr.cc.bind(L_BRANCH);
-                attr.cc.add(toDwordPtr(cpu.getPcPtr()), instr.imm);
-
-                attr.cc.bind(L_END);
-
+                attr.cc.jg(*attr.L_BRANCH);
                 return;
             }
         case B::Branch::funct3::BLTU:
             {
-                asmjit::Label L_BRANCH = attr.cc.newLabel();
-                asmjit::Label L_END = attr.cc.newLabel();
-
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getRegPtr(instr.rs2_id)));
-
-                attr.cc.cmp(attr.dst1, attr.dst2);
-                attr.cc.jb(L_BRANCH);
-                attr.cc.add(toDwordPtr(cpu.getPcPtr()), sizeof(addr_t));
-                attr.cc.jmp(L_END);
-
-                attr.cc.bind(L_BRANCH);
-                attr.cc.add(toDwordPtr(cpu.getPcPtr()), instr.imm);
-
-                attr.cc.bind(L_END);
-
+                attr.cc.jb(*attr.L_BRANCH);
                 return;
             }
         case B::Branch::funct3::BGEU:
             {
-                asmjit::Label L_BRANCH = attr.cc.newLabel();
-                asmjit::Label L_END = attr.cc.newLabel();
-
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getRegPtr(instr.rs2_id)));
-
-                attr.cc.cmp(attr.dst1, attr.dst2);
-                attr.cc.ja(L_BRANCH);
-                attr.cc.add(toDwordPtr(cpu.getPcPtr()), sizeof(addr_t));
-                attr.cc.jmp(L_END);
-
-                attr.cc.bind(L_BRANCH);
-                attr.cc.add(toDwordPtr(cpu.getPcPtr()), instr.imm);
-
-                attr.cc.bind(L_END);
+                attr.cc.ja(*attr.L_BRANCH);
                 return;
             }
         default: {return;}
@@ -459,209 +235,75 @@ void translateBranch(Cpu &cpu, Instr &instr, TranslationAttr &attr)
 }
 
 template<typename ValueT>
-reg_t LoadWrapper(Cpu *cpu, addr_t addr)
+static reg_t LoadWrapper(Cpu *cpu, addr_t addr)
 {
     return cpu->load<ValueT>(addr);
 }
 
-void translateLoad (Cpu &cpu, Instr &instr, TranslationAttr &attr)
+void translateLoad(Instr &instr, TranslationAttr &attr)
 {
     switch ((I::Load::funct3)instr.funct3)
     {
         case I::Load::funct3::LB:
             {
-                asmjit::InvokeNode *invokeNode {};
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.add(attr.dst1, instr.imm);
+                attr.cc.invoke(attr.invokeNode, (uint64_t)LoadWrapper<byte_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
+                attr.cc.mov(attr.dst2, 1);
 
-                attr.cc.invoke(&invokeNode, (uint64_t)LoadWrapper<byte_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
-                invokeNode->setArg(0, &cpu);
-                invokeNode->setArg(1, attr.dst1);
-                invokeNode->setRet(0, attr.ret);
-
-                attr.cc.mov(toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.ret);
                 break;
             }
         case I::Load::funct3::LH:
             {
-                asmjit::InvokeNode *invokeNode {};
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.add(attr.dst1, instr.imm);
-
-                attr.cc.invoke(&invokeNode, (uint64_t)LoadWrapper<half_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
-                invokeNode->setArg(0, &cpu);
-                invokeNode->setArg(1, attr.dst1);
-                invokeNode->setRet(0, attr.ret);
-
-                attr.cc.mov(toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.ret);
+                attr.cc.invoke(attr.invokeNode, (uint64_t)LoadWrapper<half_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
+                attr.cc.mov(attr.dst2, 1);
                 break;
             }
         case I::Load::funct3::LW:
             {
-                asmjit::InvokeNode *invokeNode {};
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.add(attr.dst1, instr.imm);
-
-                attr.cc.invoke(&invokeNode, (uint64_t)LoadWrapper<word_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
-                invokeNode->setArg(0, &cpu);
-                invokeNode->setArg(1, attr.dst1);
-                invokeNode->setRet(0, attr.ret);
-
-                attr.cc.mov(toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.ret);
+                attr.cc.invoke(attr.invokeNode, (uint64_t)LoadWrapper<word_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
+                attr.cc.mov(attr.dst2, 1);
                 break;
             }
         case I::Load::funct3::LBU:
             {
-                asmjit::InvokeNode *invokeNode {};
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.add(attr.dst1, instr.imm);
-
-                attr.cc.invoke(&invokeNode, (uint64_t)LoadWrapper<byte_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
-                invokeNode->setArg(0, &cpu);
-                invokeNode->setArg(1, attr.dst1);
-                invokeNode->setRet(0, attr.ret);
-
-                attr.cc.and_(attr.ret, 0x0000ffff);
-                attr.cc.mov(toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.ret);
-
+                attr.cc.invoke(attr.invokeNode, (uint64_t)LoadWrapper<byte_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
+                attr.cc.mov(attr.dst2, 0x000000ff);
                 break;
             }
         case I::Load::funct3::LHU:
             {
-                asmjit::InvokeNode *invokeNode {};
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.add(attr.dst1, instr.imm);
-
-                attr.cc.invoke(&invokeNode, (uint64_t)LoadWrapper<half_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
-                invokeNode->setArg(0, &cpu);
-                invokeNode->setArg(1, attr.dst1);
-                invokeNode->setRet(0, attr.ret);
-
-                attr.cc.and_(attr.ret, 0x0000ffff);
-                attr.cc.mov(toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.ret);
-
-                break;
-            }
-        case I::Load::funct3::LWU:
-            {
-                asmjit::InvokeNode *invokeNode {};
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.add(attr.dst1, instr.imm);
-
-                attr.cc.invoke(&invokeNode, (uint64_t)LoadWrapper<word_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
-                invokeNode->setArg(0, &cpu);
-                invokeNode->setArg(1, attr.dst1);
-                invokeNode->setRet(0, attr.ret);
-
-                attr.cc.and_(attr.ret, 0x0000ffff);
-                attr.cc.mov(toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.ret);
-
+                attr.cc.invoke(attr.invokeNode, (uint64_t)LoadWrapper<half_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
+                attr.cc.mov(attr.dst2, 0x0000ffff);
                 break;
             }
     }
 }
 
 template<typename StoreT>
-void StoreWrapper(Cpu *cpu, addr_t addr, reg_t val)
+static void StoreWrapper(Cpu *cpu, addr_t addr, reg_t val)
 {
     cpu->store<StoreT>(addr, val);
 }
 
-void translateStore(Cpu &cpu, Instr &instr, TranslationAttr &attr)
+void translateStore(Instr &instr, TranslationAttr &attr)
 {
     switch (static_cast<S::Store::funct3>(instr.funct3))
     {
         case S::Store::funct3::SB:
             {
-                asmjit::InvokeNode *invokeNode {};
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.add(attr.dst1, instr.imm);
-
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getRegPtr(instr.rs2_id)));
-
-                attr.cc.invoke(&invokeNode, (uint64_t)StoreWrapper<byte_t>, asmjit::FuncSignature::build<void, Cpu *, addr_t, reg_t>());
-                invokeNode->setArg(0, &cpu);
-                invokeNode->setArg(1, attr.dst1);
-                invokeNode->setArg(2, attr.dst2);
-
+                attr.cc.invoke(attr.invokeNode, (uint64_t)StoreWrapper<byte_t>, asmjit::FuncSignature::build<void, Cpu *, addr_t, reg_t>());
                 break;
             }
         case S::Store::funct3::SH:
             {
-                asmjit::InvokeNode *invokeNode {};
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.add(attr.dst1, instr.imm);
-
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getRegPtr(instr.rs2_id)));
-
-                attr.cc.invoke(&invokeNode, (uint64_t)StoreWrapper<half_t>, asmjit::FuncSignature::build<void, Cpu *, addr_t, reg_t>());
-                invokeNode->setArg(0, &cpu);
-                invokeNode->setArg(1, attr.dst1);
-                invokeNode->setArg(2, attr.dst2);
-
+                attr.cc.invoke(attr.invokeNode, (uint64_t)StoreWrapper<half_t>, asmjit::FuncSignature::build<void, Cpu *, addr_t, reg_t>());
                 break;
             }
         case S::Store::funct3::SW:
             {
-                asmjit::InvokeNode *invokeNode {};
-                attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-                attr.cc.add(attr.dst1, instr.imm);
-
-                attr.cc.mov(attr.dst2, toDwordPtr(cpu.getRegPtr(instr.rs2_id)));
-
-                attr.cc.invoke(&invokeNode, (uint64_t)StoreWrapper<word_t>, asmjit::FuncSignature::build<void, Cpu *, addr_t, reg_t>());
-                invokeNode->setArg(0, &cpu);
-                invokeNode->setArg(1, attr.dst1);
-                invokeNode->setArg(2, attr.dst2);
-
+                attr.cc.invoke(attr.invokeNode, (uint64_t)StoreWrapper<word_t>, asmjit::FuncSignature::build<void, Cpu *, addr_t, reg_t>());
                 break;
             }
     }
-}
-
-void translateJalr(Cpu &cpu, Instr &instr, TranslationAttr &attr)
-{
-    attr.cc.mov(attr.dst1, toDwordPtr(cpu.getRegPtr(instr.rs1_id)));
-    attr.cc.add(attr.dst1, instr.imm);
-    attr.cc.and_(attr.dst1, 0xfffffffe);
-
-    attr.cc.mov(attr.dst2, cpu.getPc());
-    attr.cc.add(attr.dst2, sizeof(addr_t));
-
-    attr.cc.mov(toDwordPtr(cpu.getReg(instr.rd_id)), attr.dst2);
-
-    attr.cc.mov(toDwordPtr(cpu.getPcPtr()), attr.dst1);
-
-    // imm_t target_addr = (cpu.getReg(instr.rs1_id) + instr.imm) & 0xfffffffe; //least-significant bit to zero
-    // cpu.setReg(instr.rd_id, cpu.getPc() + sizeof(addr_t));
-    // cpu.setPc(target_addr);
-}
-
-void translateJal(Cpu &cpu, Instr &instr, TranslationAttr &attr)
-{
-    attr.cc.mov(attr.dst1, cpu.getPc());
-    attr.cc.add(attr.dst1, sizeof(addr_t));
-
-    attr.cc.mov(toDwordPtr(cpu.getPcPtr()), instr.imm);
-
-    // cpu.setReg(instr.rd_id, cpu.getPc() + sizeof(addr_t));
-    // cpu.advancePc(instr.imm);
-}
-void translateAuipc(Cpu &cpu, Instr &instr, TranslationAttr &attr)
-{
-    attr.cc.mov(attr.dst1, cpu.getPc());
-    attr.cc.add(attr.dst1, instr.imm);
-    attr.cc.mov(toDwordPtr(cpu.getRegPtr(instr.rd_id)), attr.dst1);
-
-    // cpu.setReg(instr.rd_id, cpu.getPc() + instr.imm);
-    // cpu.advancePc()
-}
-
-void translateLui(Cpu &cpu, Instr &instr, TranslationAttr &attr)
-{
-    attr.cc.mov(toDwordPtr(cpu.getRegPtr(instr.rd_id)), instr.imm);
-    // cpu.setReg(instr.rd_id, instr.imm);
-    // cpu.advancePc();
 }
 
 Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
@@ -680,8 +322,8 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
     asmjit::x86::Gp dst2 = cc.newGpd();
     asmjit::x86::Gp ret = cc.newGpd();
 
-    TranslationAttr attr {cc, dst1, dst2, ret};
-    int icount = 0;
+    TranslationAttr attr {cc, dst1, dst2, ret, nullptr, nullptr};
+    int pc_offset = 0;
 
     for(auto instr : bb)
     {
@@ -689,72 +331,176 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
         {
             case Opcode::Imm:
                 {
-                    translateImm(cpu, instr, attr);
-                    ++icount;
+                    if(instr.rd_id == 0)
+                    {
+                        attr.cc.nop();
+                    }
+                    else
+                    {
+                        attr.cc.mov(attr.dst1, toDwordPtr(cpu.regs[instr.rs1_id]));
+                        translateImm(cpu, instr, attr);
+                        attr.cc.mov( toDwordPtr((cpu.regs[instr.rd_id])), attr.dst1);
+                    }
+                    pc_offset += instr.size;
                     break;
                 }
             case Opcode::Op:
                 {
-                    translateOp(cpu, instr, attr);
-                    ++icount;
+                    if(instr.rd_id == 0)
+                    {
+                        attr.cc.nop();
+                    }
+                    else
+                    {
+                        attr.cc.mov(attr.dst1, toDwordPtr(cpu.regs[instr.rs1_id]));
+                        attr.cc.mov(attr.dst2, toDwordPtr(cpu.regs[instr.rs2_id]));
+                        translateOp(cpu, instr, attr);
+                        attr.cc.mov(toDwordPtr(cpu.regs[instr.rd_id]), attr.dst1);
+                    }
+
+                    pc_offset += instr.size;
                     break;
                 }
             case Opcode::Load:
                 {
-                    translateLoad(cpu, instr, attr);
-                    ++icount;
+                    if(instr.rd_id == 0)
+                    {
+                        attr.cc.nop();
+                    }
+                    else
+                    {
+                        attr.cc.mov(attr.dst1, toDwordPtr(cpu.regs[instr.rs1_id]));
+                        attr.cc.add(attr.dst1, instr.imm);
+
+                        asmjit::InvokeNode *invokeNode {};
+                        attr.invokeNode = &invokeNode;
+                        translateLoad(instr, attr);
+
+                        invokeNode->setArg(0, &cpu);
+                        invokeNode->setArg(1, attr.dst1);
+                        invokeNode->setRet(0, attr.ret);
+                        attr.cc.and_(attr.ret, attr.dst2);
+                        attr.cc.mov(toDwordPtr(cpu.regs[instr.rd_id]), attr.ret);
+                    }
+
+                    pc_offset += instr.size;
                     break;
                 }
             case Opcode::Store:
                 {
-                    translateStore(cpu, instr, attr);
-                    ++icount;
+                    attr.cc.mov(attr.dst1, toDwordPtr(cpu.regs[instr.rs1_id]));
+                    attr.cc.mov(attr.dst2, instr.imm);
+                    attr.cc.add(attr.dst1, attr.dst2);
+                    attr.cc.mov(attr.dst2, toDwordPtr(cpu.regs[instr.rs2_id]));
+
+                    asmjit::InvokeNode *invokeNode {};
+                    attr.invokeNode = &invokeNode;
+                    translateStore(instr, attr);
+                    invokeNode->setArg(0, &cpu);
+                    invokeNode->setArg(1, attr.dst1);
+                    invokeNode->setArg(2, attr.dst2);
+
+                    pc_offset += instr.size;
                     break;
                 }
             case Opcode::Branch:
                 {
-                    cc.mov(attr.dst2, icount * sizeof(addr_t));
-                    cc.mov(attr.dst1, toDwordPtr(cpu.getPcPtr()));
-                    cc.add(attr.dst1, attr.dst2);
-                    cc.mov(toDwordPtr(cpu.getPcPtr()), attr.dst1);
-                    icount = 0;
-                    translateBranch(cpu, instr, attr);
+                    pc_offset += cpu.getPc();
+
+                    asmjit::Label L_BRANCH = attr.cc.newLabel();
+                    asmjit::Label L_END = attr.cc.newLabel();
+                    attr.L_BRANCH = &L_BRANCH;
+
+                    attr.cc.mov(attr.dst1, toDwordPtr(cpu.regs[instr.rs1_id]));
+                    attr.cc.mov(attr.dst2, toDwordPtr(cpu.regs[instr.rs2_id]));
+
+                    attr.cc.cmp(attr.dst1, attr.dst2);
+                    translateBranch(instr, attr);
+                    attr.cc.mov(attr.dst1, instr.size);
+                    attr.cc.jmp(L_END);
+
+                    attr.cc.bind(L_BRANCH);
+                    attr.cc.mov(attr.dst1, instr.imm);
+
+                    attr.cc.bind(L_END);
+                    attr.cc.mov(attr.dst2, pc_offset);
+                    attr.cc.add(attr.dst2, attr.dst1);
+                    attr.cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))),attr.dst2);
+
+                    pc_offset = 0;
                     break;
                 }
             case Opcode::Jalr:
                 {
-                    cc.add(toDwordPtr(cpu.getPcPtr()), icount * sizeof(addr_t));
-                    icount = 0;
-                    translateJalr(cpu, instr, attr);
+                    //advance previous pc
+                    pc_offset += cpu.getPc();
+
+                    if(instr.rd_id != 0)
+                    {
+                        attr.cc.mov(attr.dst2, pc_offset);
+                        attr.cc.mov(attr.dst1, instr.size);
+                        attr.cc.add(attr.dst2, attr.dst1);
+                        attr.cc.mov(toDwordPtr(cpu.regs[instr.rd_id]), attr.dst2);
+                    }
+
+                    attr.cc.mov(attr.dst1, toDwordPtr(cpu.regs[instr.rs1_id]));
+                    attr.cc.mov(attr.dst2, instr.imm);
+                    attr.cc.add(attr.dst1, attr.dst2);
+                    attr.cc.and_(attr.dst1, 0xfffffffe);
+
+                    attr.cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))),attr.dst1);
+
+                    pc_offset = 0;
                     break;
                 }
             case Opcode::Jal:
                 {
-                    cc.add(toDwordPtr(cpu.getPcPtr()), icount * sizeof(addr_t));
-                    icount = 0;
-                    translateJal(cpu, instr, attr);
+                    pc_offset = pc_offset + cpu.getPc();
+                    if(instr.rd_id != 0)
+                    {
+                        attr.cc.mov(toDwordPtr(cpu.regs[instr.rd_id]), pc_offset + instr.size);
+                    }
+
+                    attr.cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))),pc_offset + instr.imm);
+                    pc_offset = 0;
                     break;
                 }
             case Opcode::Auipc:
                 {
-                    cc.add(toDwordPtr(cpu.getPcPtr()), icount * sizeof(addr_t));
-                    icount = 0;
-                    translateAuipc(cpu, instr, attr);
+                    //advance previous pc
+                    pc_offset += cpu.getPc();
+
+                    attr.cc.mov(attr.dst1, pc_offset);
+                    attr.cc.mov(attr.dst2, instr.imm << 12);
+                    attr.cc.add(attr.dst1, attr.dst2);
+
+                    attr.cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))),attr.dst1);
+                    pc_offset = 0;
                     break;
                 }
             case Opcode::Lui:
                 {
-                    translateLui(cpu, instr, attr);
-                    ++icount;
+                    if(instr.rd_id != 0)
+                    {
+                        attr.cc.nop();
+                    }
+                    else
+                    {
+                        attr.cc.mov(toDwordPtr(cpu.regs[instr.rd_id]), (instr.imm << 12));
+                    }
+                    pc_offset += instr.size;
                     break;
                 }
-            case Opcode::System:
+            case Opcode::System: //TODO: don't translate system
+                {
+                    attr.cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.done))),1);
+                }
             default:{}
         }
     }
 
     ////advance pc
-    //cc.add(toDwordPtr(cpu.getPcPtr()), icount * sizeof(addr_t));
+    //cc.add(toDwordPtr(cpu.getPcPtr()), pc_offset * sizeof(addr_t));
 
     cc.endFunc();
     cc.finalize();

@@ -46,7 +46,7 @@ void executeImm (Cpu &cpu, Instr &instr)
             }
         case funct3::SLTIU:
             {
-                cpu.setReg(instr.rd_id, (std::uint32_t)cpu.getReg(instr.rs1_id) < (std::uint32_t)instr.imm);
+                cpu.setReg(instr.rd_id, static_cast<std::uint32_t>(cpu.getReg(instr.rs1_id)) < static_cast<std::uint32_t>(instr.imm));
                 break;
             }
         case funct3::SLLI:
@@ -61,12 +61,12 @@ void executeImm (Cpu &cpu, Instr &instr)
                 //SRAI:
                 if (instr.imm >> 5)
                 {
-                    cpu.setReg(instr.rd_id, (std::uint32_t)cpu.getReg(instr.rs1_id) >> instr.imm);
+                    cpu.setReg(instr.rd_id, static_cast<std::uint32_t>(cpu.getReg(instr.rs1_id)) >> instr.imm);
                 }
                 //SRLI
                 else
                 {
-                    cpu.setReg(instr.rd_id, (std::uint32_t)cpu.getReg(instr.rs1_id) >> instr.imm);
+                    cpu.setReg(instr.rd_id, static_cast<std::uint32_t>(cpu.getReg(instr.rs1_id)) >> instr.imm);
                 }
                 break;
             }
@@ -213,17 +213,12 @@ void executeLoad (Cpu &cpu, Instr &instr)
             }
         case funct3::LBU:
             {
-                cpu.setReg(instr.rd_id, (0x0000ffff & cpu.load<byte_t>(instr.imm + cpu.getReg(instr.rs1_id))));
+                cpu.setReg(instr.rd_id, (0x000000ff & cpu.load<byte_t>(instr.imm + cpu.getReg(instr.rs1_id))));
                 break;
             }
         case funct3::LHU:
             {
                 cpu.setReg(instr.rd_id, (0x0000ffff & cpu.load<half_t>(instr.imm + cpu.getReg(instr.rs1_id))));
-                break;
-            }
-        case funct3::LWU:
-            {
-                cpu.setReg(instr.rd_id, (0x0000ffff & cpu.load<word_t>(instr.imm + cpu.getReg(instr.rs1_id))));
                 break;
             }
     }
@@ -258,20 +253,20 @@ void executeStore (Cpu &cpu, Instr &instr)
 
 void executeLui(Cpu &cpu, Instr &instr)
 {
-    cpu.setReg(instr.rd_id, instr.imm);
+    cpu.setReg(instr.rd_id, (instr.imm << 12));
     cpu.advancePc();
 }
 
 void executeAuipc(Cpu &cpu, Instr &instr)
 {
-    cpu.setReg(instr.rd_id, cpu.getPc() + instr.imm);
+    cpu.setReg(instr.rd_id, cpu.getPc() + (instr.imm << 12));
     cpu.advancePc();
 }
 
 void executeJalr(Cpu &cpu, Instr &instr)
 {
-    imm_t target_addr = (cpu.getReg(instr.rs1_id) + instr.imm) & 0xfffffffe; //least-significant bit to zero
     cpu.setReg(instr.rd_id, cpu.getPc() + sizeof(addr_t));
+    imm_t target_addr = (cpu.getReg(instr.rs1_id) + instr.imm) & 0xfffffffe; //least-significant bit to zero
     cpu.setPc(target_addr);
 }
 
