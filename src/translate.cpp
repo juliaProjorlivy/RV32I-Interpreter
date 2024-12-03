@@ -247,20 +247,16 @@ void translateLoad(Instr &instr, TranslationAttr &attr)
         case I::Load::funct3::LB:
             {
                 attr.cc.invoke(attr.invokeNode, (uint64_t)LoadWrapper<byte_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
-                attr.cc.mov(attr.dst2, 1);
-
                 break;
             }
         case I::Load::funct3::LH:
             {
                 attr.cc.invoke(attr.invokeNode, (uint64_t)LoadWrapper<half_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
-                attr.cc.mov(attr.dst2, 1);
                 break;
             }
         case I::Load::funct3::LW:
             {
                 attr.cc.invoke(attr.invokeNode, (uint64_t)LoadWrapper<word_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
-                attr.cc.mov(attr.dst2, 1);
                 break;
             }
         case I::Load::funct3::LBU:
@@ -379,7 +375,10 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
                         invokeNode->setArg(0, &cpu);
                         invokeNode->setArg(1, attr.dst1);
                         invokeNode->setRet(0, attr.ret);
-                        attr.cc.and_(attr.ret, attr.dst2);
+                        if((I::Load::funct3)instr.funct3 == I::Load::funct3::LBU || (I::Load::funct3)instr.funct3 == I::Load::funct3::LHU)
+                        {
+                            attr.cc.and_(attr.ret, attr.dst2);
+                        }
                         attr.cc.mov(toDwordPtr(cpu.regs[instr.rd_id]), attr.ret);
                     }
 
