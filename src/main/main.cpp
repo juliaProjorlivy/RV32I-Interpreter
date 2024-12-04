@@ -18,7 +18,6 @@ void do_program(int Ninstr, Memory *mem, addr_t entry_point = 0)
 
     while(!cpu.isdone())
     {
-        // reg_t command = cpu.fetch();
         if(auto basic_block= cpu.bb_translated.find(cpu.getPc()); basic_block != cpu.bb_translated.end())
         {
             (basic_block->second)();
