@@ -1,5 +1,10 @@
 #include "rv32i.hpp"
 #include "cpu.hpp"
+#include <cstddef>
+#include <cstdint>
+#include <unistd.h>
+#include <fcntl.h>
+#include <vector>
 
 void interpret_block(Cpu &cpu, std::vector<Instr> instrs)
 {
@@ -17,7 +22,7 @@ void execute (Cpu &cpu, Instr &instr)
 void executeImm (Cpu &cpu, Instr &instr)
 {
     using namespace I::Imm;
-    switch ((funct3)instr.funct3)
+    switch (static_cast<funct3>(instr.funct3))
     {
         case funct3::ADDI:
             {
@@ -117,7 +122,7 @@ void executeOp (Cpu &cpu, Instr &instr)
             }
         case funct3::SLTU:
             {
-                cpu.setReg(instr.rd_id, (std::uint32_t)cpu.getReg(instr.rs1_id) < (std::uint32_t)cpu.getReg(instr.rs2_id));
+                cpu.setReg(instr.rd_id, static_cast<uint32_t>(cpu.getReg(instr.rs1_id)) < static_cast<uint32_t>(cpu.getReg(instr.rs2_id)));
                 break;
             }
         case funct3::SLL:
@@ -137,7 +142,7 @@ void executeOp (Cpu &cpu, Instr &instr)
                 }
                 else
                 {
-                    cpu.setReg(instr.rd_id, (std::uint32_t)cpu.getReg(instr.rs1_id) >> cpu.getReg(instr.rs2_id));
+                    cpu.setReg(instr.rd_id, static_cast<uint32_t>(cpu.getReg(instr.rs1_id)) >> cpu.getReg(instr.rs2_id));
                 }
                 break;
             }
@@ -178,13 +183,13 @@ void executeBranch (Cpu &cpu, Instr &instr)
             }
         case funct3::BLTU:
             {
-                if ((addr_t)cpu.getReg(instr.rs1_id) < (addr_t)cpu.getReg(instr.rs2_id)) {cpu.advancePc(instr.imm);}
+                if (static_cast<uint32_t>(cpu.getReg(instr.rs1_id)) < static_cast<uint32_t>(cpu.getReg(instr.rs2_id))) {cpu.advancePc(instr.imm);}
                 else {cpu.advancePc();}
                 return;
             }
         case funct3::BGEU:
             {
-                if ((addr_t)cpu.getReg(instr.rs1_id) > (addr_t)cpu.getReg(instr.rs2_id)) {cpu.advancePc(instr.imm);}
+                if (static_cast<uint32_t>(cpu.getReg(instr.rs1_id)) > static_cast<uint32_t>(cpu.getReg(instr.rs2_id))) {cpu.advancePc(instr.imm);}
                 else {cpu.advancePc();}
                 return;
             }
@@ -265,18 +270,73 @@ void executeAuipc(Cpu &cpu, Instr &instr)
 
 void executeJalr(Cpu &cpu, Instr &instr)
 {
-    cpu.setReg(instr.rd_id, cpu.getPc() + sizeof(addr_t));
+    cpu.setReg(instr.rd_id, cpu.getPc() + instr.size);
     imm_t target_addr = (cpu.getReg(instr.rs1_id) + instr.imm) & 0xfffffffe; //least-significant bit to zero
     cpu.setPc(target_addr);
 }
 
 void executeJal(Cpu &cpu, Instr &instr)
 {
-    cpu.setReg(instr.rd_id, cpu.getPc() + sizeof(addr_t));
+    cpu.setReg(instr.rd_id, cpu.getPc() + instr.size);
     cpu.advancePc(instr.imm);
 }
 void executeSystem(Cpu &cpu,[[maybe_unused]] Instr &instr)
 {
-    cpu.setDone();
+    //EBREAK
+    if(instr.imm) {cpu.setDone();}
+    //ECALL
+    else
+    {
+        switch (static_cast<Syscall::rv>(cpu.getReg(17)))
+        {
+            case Syscall::rv::READ:
+            {
+                int fd = cpu.getReg(10);
+                size_t buf_size = cpu.getReg(12);
+                addr_t start_buf = cpu.getReg(11);
+                std::vector<byte_t> buf = {};
+                buf.reserve(buf_size);
+                read(fd, static_cast<void *>(buf.data()), buf_size);
+                for(int i = 0; i < buf_size; i++)
+                {
+                    cpu.store<byte_t>(start_buf + i * sizeof(byte_t), buf[i]);
+                }
+                break;
+            }
+            case Syscall::rv::WRITE:
+            {
+                size_t buf_size = cpu.getReg(12);
+                addr_t start_buf = cpu.getReg(11);
+                std::vector<byte_t> buf = {};
+                for(int i = 0; i < buf_size; i++)
+                {
+                    buf.push_back(cpu.load<byte_t>(start_buf + i * sizeof(byte_t)));
+                }
+                write(cpu.getReg(10), static_cast<void *>(buf.data()), buf_size);
+                break;
+            }
+            case Syscall::rv::EXIT:
+            {
+                cpu.setDone();
+                break;
+            }
+            case Syscall::rv::MMAP:
+            {
+
+            }
+            case Syscall::rv::OPENAT:
+            {
+
+            }
+            case Syscall::rv::CLOSE:
+            {
+
+            }
+            default: {}
+        }
+    }
+    cpu.advancePc();
 }
+
+void executeFence([[maybe_unused]] Cpu &cpu,[[maybe_unused]] Instr &instr) {}
 

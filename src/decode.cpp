@@ -120,6 +120,11 @@ Instr decode(reg_t instr_)
                 instr.exec  = executeJal;
                 break;
             }
+        case Opcode::Fence:
+            {
+                instr.exec = executeFence;
+                break;
+            }
         // TODO: DEAL WITH ERROR
         default: {}
     }

@@ -17,8 +17,8 @@ enum class RegType {ZERO_REG = 0, STACK_REG = 1, DEFAULT_REG = 2};
 struct IRegister
 {
     virtual ~IRegister() = default;
-    virtual int getId() const = 0;
-    virtual reg_t getVal() const = 0;
+    virtual int getId() const noexcept = 0;
+    virtual reg_t getVal() const noexcept = 0;
     virtual void setVal(int val) = 0;
 };
 
@@ -35,10 +35,10 @@ class Register : IRegister
         {
             return std::make_unique<RegisterDefault>(*this);
         }
-        int getId() const override {return id_;}
+        int getId() const noexcept override {return id_;}
         virtual ~RegisterDefault() = default;
         virtual void setVal(int val) override {val_ = val;}
-        reg_t getVal() const override {return val_;}
+        reg_t getVal() const noexcept override {return val_;}
     };
 
     struct Register_X0 final : RegisterDefault
@@ -96,8 +96,8 @@ public:
         return *this;
     }
 
-    int getId() const override {return self_->getId();}
-    reg_t getVal() const override {return self_->getVal();}
+    int getId() const noexcept override {return self_->getId();}
+    reg_t getVal() const noexcept override {return self_->getVal();}
     void setVal(int val) override {self_->setVal(val);}
 
 
@@ -152,9 +152,11 @@ public:
     std::unordered_map<addr_t, std::vector<struct Instr>> bb_cache {};
     typedef  void (*func_t)(void);
     std::unordered_map<addr_t, func_t> bb_translated {};
+    FILE *output_log;
 
-    Cpu (Memory *mem_, addr_t entry = 0) : pc_(entry), mem(mem_)
+    Cpu (Memory *mem_, addr_t entry = 0, const char * filename = "translation.log") : pc_(entry), mem(mem_)
     {
+        output_log = fopen(filename, "rw");
         regs.push_back(Register(RegType::ZERO_REG, 0));
         regs.push_back(Register(RegType::DEFAULT_REG, 1));
         regs.push_back(Register(RegType::STACK_REG, 2));
@@ -170,15 +172,15 @@ public:
     }
 
     //TODO: NOEXCEPT
-    bool isdone() const {return done;}
+    bool isdone() const noexcept {return done;}
     //TODO: INSTR SIZE AS ARG
     void advancePc(std::size_t step = sizeof(reg_t)) {pc_ += step;}
-    reg_t getPc() const {return pc_;}
-    void setPc(reg_t val) {pc_ = val;}
+    reg_t getPc() const noexcept {return pc_;}
+    void setPc(reg_t val) noexcept {pc_ = val;}
 
     void setReg(int ireg, reg_t value) {regs[ireg].setVal(value);}
     reg_t getReg(int ireg) const {return regs[ireg].getVal();}
-    void setDone(bool val = true) {done = val;}
+    void setDone(bool val = true) noexcept {done = val;}
 
     template<typename Value_t>
     reg_t load(addr_t addr) const
@@ -204,7 +206,6 @@ public:
 
     reg_t fetch() {return mem->load<reg_t>(pc_);}
     reg_t fetch(addr_t addr) {return mem->load<reg_t>(addr);}
-
 
     friend Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb);
 };
@@ -235,6 +236,7 @@ void executeLui(Cpu &cpu, Instr &instr);
 void executeAuipc(Cpu &cpu, Instr &instr);
 void executeJalr(Cpu &cpu, Instr &instr);
 void executeJal(Cpu &cpu, Instr &instr);
+void executeFence(Cpu &cpu, Instr &instr);
 void execute(Cpu &cpu, Instr &instr);
 void interpret_block(Cpu &cpu, std::vector<Instr> instrs);
 
@@ -245,12 +247,6 @@ bool is_bb_end(Instr &instr);
 
 asmjit::x86::Mem toDwordPtr(Register &reg);
 
-// template<typename ValueT>
-// reg_t LoadWrapper(Cpu *cpu, addr_t addr);
-//
-// template<typename StoreT>
-// void StoreWrapper(Cpu *cpu, addr_t addr, reg_t val);
-//
 void translateOp(Instr &instr, TranslationAttr &attr)    ;
 void translateImm(Instr &instr, TranslationAttr &attr)   ;
 void translateBranch(Instr &instr, TranslationAttr &attr);

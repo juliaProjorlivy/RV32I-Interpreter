@@ -66,7 +66,7 @@ asmjit::x86::Mem toDwordPtr(Register &reg)
 }
 
 
-void translateOp(Cpu &cpu, Instr &instr, TranslationAttr &attr)
+void translateOp(Instr &instr, TranslationAttr &attr)
 {
     switch (static_cast<R::Op::funct3>(instr.funct3))
     {
@@ -133,7 +133,7 @@ void translateOp(Cpu &cpu, Instr &instr, TranslationAttr &attr)
     }
 }
 
-void translateImm(Cpu &cpu, Instr &instr, TranslationAttr &attr)
+void translateImm(Instr &instr, TranslationAttr &attr)
 {
     switch ((I::Imm::funct3)instr.funct3)
     {
@@ -311,7 +311,7 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
     asmjit::x86::Compiler cc(&code);
     cc.addFunc(asmjit::FuncSignature::build<int>());
 
-    asmjit::FileLogger logger(stdout);
+    asmjit::FileLogger logger(cpu.output_log);
     code.setLogger(&logger);
 
     asmjit::x86::Gp dst1 = cc.newGpd();
@@ -335,7 +335,7 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
                     {
                         cc.mov(dst1, toDwordPtr(cpu.regs[instr.rs1_id]));
                         cc.mov(dst2, instr.imm);
-                        translateImm(cpu, instr, attr);
+                        translateImm(instr, attr);
                         cc.mov( toDwordPtr((cpu.regs[instr.rd_id])), dst1);
                     }
                     pc_offset += instr.size;
@@ -351,7 +351,7 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
                     {
                         cc.mov(dst1, toDwordPtr(cpu.regs[instr.rs1_id]));
                         cc.mov(dst2, toDwordPtr(cpu.regs[instr.rs2_id]));
-                        translateOp(cpu, instr, attr);
+                        translateOp(instr, attr);
                         cc.mov(toDwordPtr(cpu.regs[instr.rd_id]), dst1);
                     }
 
@@ -496,9 +496,16 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
                     pc_offset += instr.size;
                     break;
                 }
+            case Opcode::Fence:
+                {
+                    cc.nop();
+                    pc_offset += instr.size;
+                }
             case Opcode::System: //TODO: don't translate system
                 {
-                    cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.done))),1);
+                    pc_offset += cpu.getPc();
+                    cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))),pc_offset);
+                    pc_offset = 0;
                 }
             default:{}
         }

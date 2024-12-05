@@ -27,3 +27,12 @@ struct RV32I_Test : public testing::Test
     void TearDown() {delete mem; delete cpu;};
 };
 
+struct RV32I_Test_Translate : public testing::Test
+{
+    Memory *mem;
+    Cpu *cpu;
+
+    void SetUp() {mem = new Memory; cpu = new Cpu{mem};};
+    void TearDown() {delete mem; delete cpu;};
+};
+

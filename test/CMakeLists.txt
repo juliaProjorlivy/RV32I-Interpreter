@@ -18,7 +18,7 @@ project(${CMAKE_PROJECT_NAME})
 # Define tests
 enable_testing()
 
-add_executable(test test_execute.cpp test_decode.cpp main.cpp)
+add_executable(test test_execute.cpp test_decode.cpp test_translate.cpp main.cpp)
 
 target_link_libraries(test
     PRIVATE

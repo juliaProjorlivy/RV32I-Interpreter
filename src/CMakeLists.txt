@@ -1,6 +1,6 @@
 project(${CMAKE_PROJECT_NAME})
 
-add_library(rv32i STATIC decode.cpp execute.cpp translate.cpp)
+add_library(rv32i STATIC decode.cpp execute.cpp translate.cpp io.cpp)
 
 target_link_libraries(rv32i
     PUBLIC
