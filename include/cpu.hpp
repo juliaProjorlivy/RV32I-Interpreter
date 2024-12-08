@@ -2,6 +2,7 @@
 #define CPU_RV_HPP
 
 #include <cstddef>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <unordered_map>
@@ -10,7 +11,7 @@
 #include "asmjit/core/compiler.h"
 #include "asmjit/core/jitruntime.h"
 #include "asmjit/x86/x86compiler.h"
-#include "rv32i.hpp"
+#include "trace.hpp"
 
 enum class RegType {ZERO_REG = 0, STACK_REG = 1, DEFAULT_REG = 2};
 
@@ -146,6 +147,9 @@ private:
     Memory *mem {};
     bool done {false};
 
+    //for tracing
+    // Trace tracer;
+
 public:
     //for binary translation
     asmjit::JitRuntime rt;
@@ -154,9 +158,10 @@ public:
     std::unordered_map<addr_t, func_t> bb_translated {};
     FILE *output_log;
 
-    Cpu (Memory *mem_, addr_t entry = 0, const char * filename = "translation.log") : pc_(entry), mem(mem_)
+    Cpu (Memory *mem_, addr_t entry = 0, const char *filename = "x86_64") : pc_(entry), mem(mem_)
     {
-        output_log = fopen(filename, "rw");
+        output_log = fopen(filename, "w+");
+        if(!output_log) {std::cout << "Failed to open a file " << filename << std::endl;}
         regs.push_back(Register(RegType::ZERO_REG, 0));
         regs.push_back(Register(RegType::DEFAULT_REG, 1));
         regs.push_back(Register(RegType::STACK_REG, 2));
@@ -170,6 +175,7 @@ public:
             // regs[i] = Register(RegType::DEFAULT_REG,i);
         }
     }
+    ~Cpu() {}
 
     //TODO: NOEXCEPT
     bool isdone() const noexcept {return done;}

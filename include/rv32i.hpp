@@ -138,25 +138,14 @@ namespace Syscall
 {
     enum class rv
     {
+        LSEEK  = 62,
         READ   = 63,
         WRITE  = 64,
-        OPENAT = 56,
         CLOSE  = 57,
         EXIT   = 93,
         MMAP   = 222,
     };
-
-    enum class x86
-    {
-        READ   = 0,
-        WRITE  = 1,
-        OPENAT = 2,
-        CLOSE  = 3,
-        EXIT   = 60,
-        MMAP   = 9,
-    };
 }
-
 
 #endif
 

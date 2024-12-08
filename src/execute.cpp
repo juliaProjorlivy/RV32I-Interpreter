@@ -2,6 +2,7 @@
 #include "cpu.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <vector>
@@ -296,11 +297,12 @@ void executeSystem(Cpu &cpu,[[maybe_unused]] Instr &instr)
                 addr_t start_buf = cpu.getReg(11);
                 std::vector<byte_t> buf = {};
                 buf.reserve(buf_size);
-                read(fd, static_cast<void *>(buf.data()), buf_size);
+                ssize_t ret_val = read(fd, static_cast<void *>(buf.data()), buf_size);
                 for(int i = 0; i < buf_size; i++)
                 {
                     cpu.store<byte_t>(start_buf + i * sizeof(byte_t), buf[i]);
                 }
+                cpu.setReg(1, ret_val);
                 break;
             }
             case Syscall::rv::WRITE:
@@ -312,7 +314,8 @@ void executeSystem(Cpu &cpu,[[maybe_unused]] Instr &instr)
                 {
                     buf.push_back(cpu.load<byte_t>(start_buf + i * sizeof(byte_t)));
                 }
-                write(cpu.getReg(10), static_cast<void *>(buf.data()), buf_size);
+                ssize_t ret_val = write(cpu.getReg(10), static_cast<void *>(buf.data()), buf_size);
+                cpu.setReg(1, ret_val);
                 break;
             }
             case Syscall::rv::EXIT:
@@ -324,13 +327,21 @@ void executeSystem(Cpu &cpu,[[maybe_unused]] Instr &instr)
             {
 
             }
-            case Syscall::rv::OPENAT:
-            {
-
-            }
             case Syscall::rv::CLOSE:
             {
-
+                int fd = cpu.getReg(10);
+                int ret_val = close(fd);
+                cpu.setReg(1, ret_val);
+                break;
+            }
+            case Syscall::rv::LSEEK:
+            {
+                int fd = cpu.getReg(10);
+                __off_t offset = cpu.getReg(11);
+                int whence = cpu.getReg(12);
+                int ret_val = lseek(fd, offset, whence);
+                cpu.setReg(1, ret_val);
+                break;
             }
             default: {}
         }

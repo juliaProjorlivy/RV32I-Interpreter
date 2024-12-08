@@ -16,7 +16,6 @@ bool is_bb_end(Instr &instr)
         case Opcode::Jal:
         case Opcode::Jalr:
         case Opcode::System:
-        case Opcode::Auipc:
             return true;
         default:
             return false;
@@ -50,21 +49,10 @@ std::vector<Instr> lookup(Cpu &cpu, addr_t addr)
     return basic_block_res->second;
 }
 
-// template<typename T>
-// asmjit::x86::Mem toDwordPtr(T arg)
-// {
-//     return asmjit::x86::dword_ptr((uint64_t)(arg));
-// }
-
-// asmjit::x86::Mem toDwordPtr(Cpu &cpu)
-// {
-//     return asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_)));
-// }
 asmjit::x86::Mem toDwordPtr(Register &reg)
 {
     return asmjit::x86::dword_ptr((uint64_t)(&(reg.self_->val_)));
 }
-
 
 void translateOp(Instr &instr, TranslationAttr &attr)
 {
@@ -137,7 +125,6 @@ void translateImm(Instr &instr, TranslationAttr &attr)
 {
     switch ((I::Imm::funct3)instr.funct3)
     {
-        // x0!!!!!!
         case I::Imm::funct3::ADDI:
             {
                 attr.cc.add(attr.dst1, attr.dst2);
@@ -192,7 +179,6 @@ void translateImm(Instr &instr, TranslationAttr &attr)
         default: {return;}
         //TODO: THROW AN ERROR
     }
-
 }
 
 void translateBranch(Instr &instr, TranslationAttr &attr)
