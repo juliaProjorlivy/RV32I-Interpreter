@@ -458,14 +458,15 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
             case Opcode::Auipc:
                 {
                     //advance previous pc
-                    pc_offset += cpu.getPc();
+                    addr_t new_pc = pc_offset + cpu.getPc() + (instr.imm << 12);
 
-                    cc.mov(dst1, pc_offset);
-                    cc.mov(dst2, instr.imm << 12);
-                    cc.add(dst1, dst2);
+                    cc.mov(dst1, new_pc);
+                    cc.mov(toDwordPtr(cpu.regs[instr.rd_id]), dst1);
 
-                    cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))),dst1);
-                    pc_offset = 0;
+    // cpu.setReg(instr.rd_id, cpu.getPc() + (instr.imm << 12));
+    // cpu.advancePc();
+                    // cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))),dst1);
+                    pc_offset += instr.size;
                     break;
                 }
             case Opcode::Lui:
@@ -490,7 +491,8 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
             case Opcode::System: //TODO: don't translate system
                 {
                     pc_offset += cpu.getPc();
-                    cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))),pc_offset);
+                    cc.mov(dst1, pc_offset);
+                    cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))),dst1);
                     pc_offset = 0;
                 }
             default:{}

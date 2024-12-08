@@ -34,3 +34,4 @@ build/*
 
 *.clangd
 *.hex
+x86_64

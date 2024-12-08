@@ -1,9 +1,9 @@
 .global main
 
 .section .rodata
-buf_sz: .word   14
+buf_sz: .word   1
 .section .data
-buf:    .asciz ""
+buf:    .asciz " "
 
 .section .text
 main:
