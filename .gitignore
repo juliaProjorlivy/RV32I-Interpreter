@@ -28,6 +28,7 @@
 
 # Executables
 build/*
+build1/*
 *.exe
 *.out
 *.app

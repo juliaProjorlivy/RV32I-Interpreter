@@ -144,7 +144,7 @@ private:
     static const int NRegs = 32;
     reg_t pc_;
     std::vector<Register> regs {};
-    Memory *mem {};
+    Memory *mem;
     bool done {false};
 
     //for tracing

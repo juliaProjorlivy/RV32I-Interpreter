@@ -6,8 +6,7 @@ TEST_F(RV32I_Test_Translate, Test_1)
 {
     const char *filename = "./test/data/test1";
 
-    addr_t main_entry_offset = 0;
-    if(elfio_manager(filename, *mem, main_entry_offset)){return;};
+    if(elfio_manager(filename, *cpu)){return;};
     if(run_simulation(*cpu)) {return;};
 
     EXPECT_EQ(cpu->getReg(8), 2);
@@ -22,8 +21,7 @@ TEST_F(RV32I_Test_Translate, Test_2)
 {
     const char *filename = "./test/data/test2";
 
-    addr_t main_entry_offset = 0;
-    if(elfio_manager(filename, *mem, main_entry_offset)) {return;};
+    if(elfio_manager(filename, *cpu)) {return;};
     if(run_simulation(*cpu)) {return;};
 
     EXPECT_EQ(cpu->getReg(0), 0);
@@ -38,8 +36,7 @@ TEST_F(RV32I_Test_Translate, Test_3)
 {
     const char *filename = "./test/data/test3";
 
-    addr_t main_entry_offset = 0;
-    if(elfio_manager(filename, *mem, main_entry_offset)) {return;};
+    if(elfio_manager(filename, *cpu)) {return;};
     if(run_simulation(*cpu)) {return;};
 
     EXPECT_EQ(cpu->getReg(0), 0);
@@ -56,10 +53,8 @@ TEST_F(RV32I_Test_Translate, Test_fibonacci_10)
 {
     const char *filename = "./test/data/fib_out_10";
 
-    addr_t main_entry_offset = 0;
-    if(elfio_manager(filename, *mem, main_entry_offset)) {return;};
+    if(elfio_manager(filename, *cpu)) {return;};
 
-    cpu->setPc(main_entry_offset);
     if(run_simulation(*cpu)) {return;};
 
     EXPECT_EQ(cpu->getReg(0), 0);
@@ -70,10 +65,8 @@ TEST_F(RV32I_Test_Translate, Test_fibonacci_5)
 {
     const char *filename = "./test/data/fib_out_5";
 
-    addr_t main_entry_offset = 0;
-    if(elfio_manager(filename, *mem, main_entry_offset)) {return;};
+    if(elfio_manager(filename, *cpu)) {return;};
 
-    cpu->setPc(main_entry_offset);
     if(run_simulation(*cpu)) {return;};
 
     EXPECT_EQ(cpu->getReg(0), 0);

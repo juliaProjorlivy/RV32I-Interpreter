@@ -488,7 +488,7 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
                     cc.nop();
                     pc_offset += instr.size;
                 }
-            case Opcode::System: //TODO: don't translate system
+            case Opcode::System:
                 {
                     pc_offset += cpu.getPc();
                     cc.mov(dst1, pc_offset);

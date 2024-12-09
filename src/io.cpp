@@ -4,15 +4,15 @@
 #include <elfio/elf_types.hpp>
 #include <elfio/elfio_segment.hpp>
 
-void write_to_mem(Memory &mem, int Ninstr, const char *data_ptr, addr_t entry)
+void write_to_mem(Cpu &cpu, int Ninstr, const char *data_ptr, addr_t entry)
 {
     for (int j = 0; j < Ninstr; ++j)
     {
-        mem.store<addr_t>(entry + j * sizeof(addr_t), *(reinterpret_cast<const reg_t *>(data_ptr + j * sizeof(reg_t))));
+        cpu.store<addr_t>(entry + j * sizeof(addr_t), *(reinterpret_cast<const reg_t *>(data_ptr + j * sizeof(reg_t))));
     }
 }
 
-int elfio_manager(const char *filename, Memory &mem, addr_t &main_entry_offset)
+int elfio_manager(const char *filename, Cpu &cpu)
 {
     ELFIO::elfio reader;
     if(!reader.load(filename))
@@ -46,10 +46,12 @@ int elfio_manager(const char *filename, Memory &mem, addr_t &main_entry_offset)
         if(seg->get_type() == ELFIO::PT_LOAD && seg->get_flags() == (ELFIO::PF_X | ELFIO::PF_R))
         {
             Ninstr = (seg->get_file_size() - code_start_offset) / sizeof(addr_t);
-            main_entry_offset = entry_point - seg->get_virtual_address() - code_start_offset;
+            addr_t main_entry_offset = entry_point - seg->get_virtual_address() - code_start_offset;
             const char *start = seg->get_data() + code_start_offset;
 
-            write_to_mem(mem, Ninstr, start);
+            cpu.setPc(main_entry_offset);
+
+            write_to_mem(cpu, Ninstr, start);
         }
     }
 
