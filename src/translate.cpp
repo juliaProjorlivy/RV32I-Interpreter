@@ -290,12 +290,11 @@ void translateStore(Instr &instr, TranslationAttr &attr)
 
 Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
 {
-    // addr_t pc_offset = 0;
     asmjit::CodeHolder code;
     code.init(cpu.rt.environment(), cpu.rt.cpuFeatures());
 
     asmjit::x86::Compiler cc(&code);
-    cc.addFunc(asmjit::FuncSignature::build<int>());
+    cc.addFunc(asmjit::FuncSignature::build<void>());
 
     asmjit::FileLogger logger(cpu.output_log);
     code.setLogger(&logger);
@@ -463,9 +462,6 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
                     cc.mov(dst1, new_pc);
                     cc.mov(toDwordPtr(cpu.regs[instr.rd_id]), dst1);
 
-    // cpu.setReg(instr.rd_id, cpu.getPc() + (instr.imm << 12));
-    // cpu.advancePc();
-                    // cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))),dst1);
                     pc_offset += instr.size;
                     break;
                 }
@@ -490,6 +486,7 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
                 }
             case Opcode::System:
                 {
+                    //TODO:: INVOKENODE
                     pc_offset += cpu.getPc();
                     cc.mov(dst1, pc_offset);
                     cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))),dst1);

@@ -23,6 +23,7 @@ struct IRegister
     virtual void setVal(int val) = 0;
 };
 
+//TODO: SIMPLIFY
 class Register : IRegister
 {
     struct RegisterDefault : IRegister
@@ -128,12 +129,14 @@ public:
     template<typename Value_t>
     reg_t load(addr_t addr) const
     {
+        //TODO: memcpy(bitcast)
         return static_cast<reg_t>(*(reinterpret_cast<const Value_t *>(data.data() + addr)));
     }
 
     template<typename Store_t>
     void store(addr_t addr, reg_t val)
     {
+        //TODO: memcpy(bitcast)
         *(reinterpret_cast<Store_t *>((data.data() + addr))) = val;
     }
 };
@@ -213,6 +216,7 @@ public:
     reg_t fetch() {return mem->load<reg_t>(pc_);}
     reg_t fetch(addr_t addr) {return mem->load<reg_t>(addr);}
 
+    //TODO: AS A MEMBER-FUNC
     friend Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb);
 };
 

@@ -155,6 +155,7 @@ void executeOp (Cpu &cpu, Instr &instr)
 
 void executeBranch (Cpu &cpu, Instr &instr)
 {
+    //TODO: NEXT_PC
     using namespace B::Branch;
     switch ((funct3)instr.funct3)
     {
@@ -320,6 +321,7 @@ void executeSystem(Cpu &cpu,[[maybe_unused]] Instr &instr)
             }
             case Syscall::rv::EXIT:
             {
+                //TODO: RETURN VALUE
                 cpu.setDone();
                 break;
             }

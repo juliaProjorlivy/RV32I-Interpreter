@@ -47,6 +47,7 @@ int elfio_manager(const char *filename, Cpu &cpu)
         {
             Ninstr = (seg->get_file_size() - code_start_offset) / sizeof(addr_t);
             addr_t main_entry_offset = entry_point - seg->get_virtual_address() - code_start_offset;
+            //TODO: LOAD ALL
             const char *start = seg->get_data() + code_start_offset;
 
             cpu.setPc(main_entry_offset);
@@ -62,31 +63,31 @@ int run_simulation(Cpu &cpu)
 {
     while(!cpu.isdone())
     {
-        if(auto basic_block= cpu.bb_translated.find(cpu.getPc()); basic_block != cpu.bb_translated.end())
-        {
-            (basic_block->second)();
-            continue;
-        }
-        else if(cpu.bb_cache.count(cpu.getPc()))
-        {
-            auto cache_block= cpu.bb_cache.find(cpu.getPc());
-            if(cache_block->second.size() >= BB_THRESHOLD)
-            {
-                auto func = translate(cpu, cache_block->second);
-                if(func)
-                {
-                    cpu.bb_translated.emplace(cpu.getPc(), func);
-                    func();
-                    continue;
-                }
-                else
-                {
-                    std::cout << "TRNASLATION ERROR\n";
-                    return 1;
-                }
-            }
-            //TODO: HANDLE AN ERROR
-        }
+        // if(auto basic_block= cpu.bb_translated.find(cpu.getPc()); basic_block != cpu.bb_translated.end())
+        // {
+        //     (basic_block->second)();
+        //     continue;
+        // }
+        // else if(cpu.bb_cache.count(cpu.getPc()))
+        // {
+        //     auto cache_block= cpu.bb_cache.find(cpu.getPc());
+        //     if(cache_block->second.size() >= BB_THRESHOLD)
+        //     {
+        //         auto func = translate(cpu, cache_block->second);
+        //         if(func)
+        //         {
+        //             cpu.bb_translated.emplace(cpu.getPc(), func);
+        //             func();
+        //             continue;
+        //         }
+        //         else
+        //         {
+        //             std::cout << "TRNASLATION ERROR\n";
+        //             return 1;
+        //         }
+        //     }
+        //     //TODO: HANDLE AN ERROR
+        // }
         auto instrs = lookup(cpu, cpu.getPc());
         interpret_block (cpu, instrs);
     }

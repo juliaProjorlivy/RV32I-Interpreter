@@ -33,6 +33,7 @@ int getRs2Id(reg_t instr)
     return (instr >> 20) & regsize;
 }
 
+//TODO: DECODE FULLY (FUNC)
 Instr decode(reg_t instr_)
 {
     Instr instr{};
