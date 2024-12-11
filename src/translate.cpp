@@ -49,10 +49,10 @@ std::vector<Instr> lookup(Cpu &cpu, addr_t addr)
     return basic_block_res->second;
 }
 
-asmjit::x86::Mem toDwordPtr(Register &reg)
-{
-    return asmjit::x86::dword_ptr((uint64_t)(&(reg.self_->val_)));
-}
+// asmjit::x86::Mem toDwordPtr(Register &reg)
+// {
+//     return asmjit::x86::dword_ptr((uint64_t)(&(reg.self_->val_)));
+// }
 
 void translateOp(Instr &instr, TranslationAttr &attr)
 {
@@ -288,15 +288,15 @@ void translateStore(Instr &instr, TranslationAttr &attr)
     }
 }
 
-Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
+Cpu::func_t Cpu::translate(std::vector<Instr> &bb)
 {
     asmjit::CodeHolder code;
-    code.init(cpu.rt.environment(), cpu.rt.cpuFeatures());
+    code.init(rt.environment(), rt.cpuFeatures());
 
     asmjit::x86::Compiler cc(&code);
     cc.addFunc(asmjit::FuncSignature::build<void>());
 
-    asmjit::FileLogger logger(cpu.output_log);
+    asmjit::FileLogger logger(output_log);
     code.setLogger(&logger);
 
     asmjit::x86::Gp dst1 = cc.newGpd();
@@ -318,10 +318,10 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
                     }
                     else
                     {
-                        cc.mov(dst1, toDwordPtr(cpu.regs[instr.rs1_id]));
+                        cc.mov(dst1, regs[instr.rs1_id].toDwordPtr());
                         cc.mov(dst2, instr.imm);
                         translateImm(instr, attr);
-                        cc.mov( toDwordPtr((cpu.regs[instr.rd_id])), dst1);
+                        cc.mov( (regs[instr.rd_id].toDwordPtr()), dst1);
                     }
                     pc_offset += instr.size;
                     break;
@@ -334,10 +334,10 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
                     }
                     else
                     {
-                        cc.mov(dst1, toDwordPtr(cpu.regs[instr.rs1_id]));
-                        cc.mov(dst2, toDwordPtr(cpu.regs[instr.rs2_id]));
+                        cc.mov(dst1, regs[instr.rs1_id].toDwordPtr());
+                        cc.mov(dst2, regs[instr.rs2_id].toDwordPtr());
                         translateOp(instr, attr);
-                        cc.mov(toDwordPtr(cpu.regs[instr.rd_id]), dst1);
+                        cc.mov(regs[instr.rd_id].toDwordPtr(), dst1);
                     }
 
                     pc_offset += instr.size;
@@ -351,7 +351,7 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
                     }
                     else
                     {
-                        cc.mov(dst1, toDwordPtr(cpu.regs[instr.rs1_id]));
+                        cc.mov(dst1, regs[instr.rs1_id].toDwordPtr());
                         cc.mov(dst2, instr.imm);
                         cc.add(dst1, dst2);
 
@@ -359,14 +359,14 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
                         attr.invokeNode = &invokeNode;
                         translateLoad(instr, attr);
 
-                        invokeNode->setArg(0, &cpu);
+                        invokeNode->setArg(0, this);
                         invokeNode->setArg(1, dst1);
                         invokeNode->setRet(0, ret);
                         if((I::Load::funct3)instr.funct3 == I::Load::funct3::LBU || (I::Load::funct3)instr.funct3 == I::Load::funct3::LHU)
                         {
                             cc.and_(ret, dst2);
                         }
-                        cc.mov(toDwordPtr(cpu.regs[instr.rd_id]), ret);
+                        cc.mov(regs[instr.rd_id].toDwordPtr(), ret);
                     }
 
                     pc_offset += instr.size;
@@ -374,15 +374,15 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
                 }
             case Opcode::Store:
                 {
-                    cc.mov(dst1, toDwordPtr(cpu.regs[instr.rs1_id]));
+                    cc.mov(dst1, regs[instr.rs1_id].toDwordPtr());
                     cc.mov(dst2, instr.imm);
                     cc.add(dst1, dst2);
-                    cc.mov(dst2, toDwordPtr(cpu.regs[instr.rs2_id]));
+                    cc.mov(dst2, regs[instr.rs2_id].toDwordPtr());
 
                     asmjit::InvokeNode *invokeNode {};
                     attr.invokeNode = &invokeNode;
                     translateStore(instr, attr);
-                    invokeNode->setArg(0, &cpu);
+                    invokeNode->setArg(0, this);
                     invokeNode->setArg(1,dst1);
                     invokeNode->setArg(2,dst2);
 
@@ -391,14 +391,14 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
                 }
             case Opcode::Branch:
                 {
-                    pc_offset += cpu.getPc();
+                    pc_offset += getPc();
 
                     asmjit::Label L_BRANCH = cc.newLabel();
                     asmjit::Label L_END = cc.newLabel();
                     attr.L_BRANCH = &L_BRANCH;
 
-                    cc.mov(dst1, toDwordPtr(cpu.regs[instr.rs1_id]));
-                    cc.mov(dst2, toDwordPtr(cpu.regs[instr.rs2_id]));
+                    cc.mov(dst1, regs[instr.rs1_id].toDwordPtr());
+                    cc.mov(dst2, regs[instr.rs2_id].toDwordPtr());
 
                     cc.cmp(dst1, dst2);
                     translateBranch(instr, attr);
@@ -411,7 +411,7 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
                     cc.bind(L_END);
                     cc.mov(dst2, pc_offset);
                     cc.add(dst2, dst1);
-                    cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))),dst2);
+                    cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(pc_))),dst2);
 
                     pc_offset = 0;
                     break;
@@ -419,48 +419,48 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
             case Opcode::Jalr:
                 {
                     //advance previous pc
-                    pc_offset += cpu.getPc();
+                    pc_offset += getPc();
 
                     if(instr.rd_id != 0)
                     {
                         cc.mov(dst2, pc_offset);
                         cc.mov(dst1, instr.size);
                         cc.add(dst2, dst1);
-                        cc.mov(toDwordPtr(cpu.regs[instr.rd_id]), dst2);
+                        cc.mov(regs[instr.rd_id].toDwordPtr(), dst2);
                     }
 
-                    cc.mov(dst1, toDwordPtr(cpu.regs[instr.rs1_id]));
+                    cc.mov(dst1, regs[instr.rs1_id].toDwordPtr());
                     cc.mov(dst2, instr.imm);
                     cc.add(dst1, dst2);
                     cc.mov(dst2, 0xfffffffe);
                     cc.and_(dst1, dst2);
 
-                    cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))),dst1);
+                    cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(pc_))),dst1);
 
                     pc_offset = 0;
                     break;
                 }
             case Opcode::Jal:
                 {
-                    pc_offset = pc_offset + cpu.getPc();
+                    pc_offset = pc_offset + getPc();
                     if(instr.rd_id != 0)
                     {
                         cc.mov(dst1, pc_offset + instr.size);
-                        cc.mov(toDwordPtr(cpu.regs[instr.rd_id]), dst1);
+                        cc.mov(regs[instr.rd_id].toDwordPtr(), dst1);
                     }
 
                     cc.mov(dst1,pc_offset + instr.imm);
-                    cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))),dst1);
+                    cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(pc_))),dst1);
                     pc_offset = 0;
                     break;
                 }
             case Opcode::Auipc:
                 {
                     //advance previous pc
-                    addr_t new_pc = pc_offset + cpu.getPc() + (instr.imm << 12);
+                    addr_t new_pc = pc_offset + getPc() + (instr.imm << 12);
 
                     cc.mov(dst1, new_pc);
-                    cc.mov(toDwordPtr(cpu.regs[instr.rd_id]), dst1);
+                    cc.mov(regs[instr.rd_id].toDwordPtr(), dst1);
 
                     pc_offset += instr.size;
                     break;
@@ -474,7 +474,7 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
                     else
                     {
                         cc.mov(dst1, (instr.imm << 12));
-                        cc.mov(toDwordPtr(cpu.regs[instr.rd_id]), dst1);
+                        cc.mov(regs[instr.rd_id].toDwordPtr(), dst1);
                     }
                     pc_offset += instr.size;
                     break;
@@ -487,9 +487,9 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
             case Opcode::System:
                 {
                     //TODO:: INVOKENODE
-                    pc_offset += cpu.getPc();
+                    pc_offset += getPc();
                     cc.mov(dst1, pc_offset);
-                    cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))),dst1);
+                    cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(pc_))),dst1);
                     pc_offset = 0;
                 }
             default:{}
@@ -500,7 +500,7 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
     cc.finalize();
 
     Cpu::func_t exec;
-    asmjit::Error err = cpu.rt.add(&exec, &code);
+    asmjit::Error err = rt.add(&exec, &code);
     if (err)
     {
         std::cout << "Failed to translate\n"

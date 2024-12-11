@@ -2,6 +2,7 @@
 #include "cpu.hpp"
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -20,6 +21,15 @@ void execute (Cpu &cpu, Instr &instr)
     instr.exec(cpu, instr);
 }
 
+        // ADDI  = 0b0000,
+        // SLLI  = 0b0001,
+        // SLTI  = 0b0010,
+        // SLTIU = 0b0011,
+        // XORI  = 0b0100,
+        // SRLI  = 0b0101,
+        // ORI   = 0b0110,
+        // ANDI  = 0b0111,
+        // SRAI  = 0b1000,
 void executeImm (Cpu &cpu, Instr &instr)
 {
     using namespace I::Imm;

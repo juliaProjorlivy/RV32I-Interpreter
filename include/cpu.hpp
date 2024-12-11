@@ -2,108 +2,40 @@
 #define CPU_RV_HPP
 
 #include <cstddef>
+#include <cstdint>
 #include <fstream>
 #include <iostream>
-#include <memory>
+#include <type_traits>
 #include <unordered_map>
 #include <vector>
+#include <functional>
 
 #include "asmjit/core/compiler.h"
 #include "asmjit/core/jitruntime.h"
 #include "asmjit/x86/x86compiler.h"
+#include "rv32i.hpp"
 #include "trace.hpp"
 
-enum class RegType {ZERO_REG = 0, STACK_REG = 1, DEFAULT_REG = 2};
-
-struct IRegister
+struct Register
 {
-    virtual ~IRegister() = default;
-    virtual int getId() const noexcept = 0;
-    virtual reg_t getVal() const noexcept = 0;
-    virtual void setVal(int val) = 0;
-};
-
-//TODO: SIMPLIFY
-class Register : IRegister
-{
-    struct RegisterDefault : IRegister
-    {
-    // private:
-        int id_;
-        reg_t val_;
-    // public:
-        RegisterDefault(int id, reg_t val = 0) : id_(id), val_(val) {}
-        virtual std::unique_ptr<RegisterDefault> copy_() const
-        {
-            return std::make_unique<RegisterDefault>(*this);
-        }
-        int getId() const noexcept override {return id_;}
-        virtual ~RegisterDefault() = default;
-        virtual void setVal(int val) override {val_ = val;}
-        reg_t getVal() const noexcept override {return val_;}
-    };
-
-    struct Register_X0 final : RegisterDefault
-    {
-        Register_X0() : RegisterDefault {0, 0} {}
-        void setVal([[maybe_unused]] int val) override {};
-        std::unique_ptr<RegisterDefault> copy_() const override
-        {
-            return std::make_unique<Register_X0>(*this);
-        }
-    };
-
-    struct Register_X2 final : RegisterDefault
-    {
-    private:
-        static const reg_t stack_start = 0x000aeffc;
-    public:
-        Register_X2 () : RegisterDefault{2,stack_start} {}
-        std::unique_ptr<RegisterDefault> copy_() const override
-        {
-            return std::make_unique<Register_X2>(*this);
-        }
-    };
-
-    std::unique_ptr<RegisterDefault> self_;
+private:
+    int id_;
+    reg_t val_;
+    static const reg_t stack_start = 0x000aeffc;
 
 public:
-    Register(RegType reg_type, int id, int val = 0)
+    Register(int id, reg_t val = 0) : id_(id), val_(val)
     {
-        switch (reg_type)
-        {
-            case RegType::ZERO_REG:
-            {
-                self_ = std::make_unique<Register_X0>();
-                break;
-            }
-            case RegType::STACK_REG:
-            {
-                self_ = std::make_unique<Register_X2>();
-                break;
-            }
-            case RegType::DEFAULT_REG:
-            {
-                self_ = std::make_unique<RegisterDefault>(id, val);
-                break;
-            }
-        }
+        if(id_ == 0) {val_ = 0;}
+        else if(id_ == 2) {val_ = stack_start;}
     }
+    void setVal(reg_t val) noexcept {if(id_ != 0) {val_ = val;}}
+    reg_t getVal() const noexcept {return val_;}
 
-    Register(const Register &reg) : self_(reg.self_->copy_()) {}
-    Register(Register &&reg) noexcept = default;
-    Register &operator=(Register &&reg) noexcept
+    asmjit::x86::Mem toDwordPtr()
     {
-        self_ = std::move(reg.self_);
-        return *this;
+        return asmjit::x86::dword_ptr(reinterpret_cast<uint64_t>(&(val_)));
     }
-
-    int getId() const noexcept override {return self_->getId();}
-    reg_t getVal() const noexcept override {return self_->getVal();}
-    void setVal(int val) override {self_->setVal(val);}
-
-
-    friend asmjit::x86::Mem toDwordPtr(Register &reg);
 };
 
 struct TranslationAttr
@@ -129,15 +61,15 @@ public:
     template<typename Value_t>
     reg_t load(addr_t addr) const
     {
-        //TODO: memcpy(bitcast)
-        return static_cast<reg_t>(*(reinterpret_cast<const Value_t *>(data.data() + addr)));
+        reg_t ret_val = 0;
+        memcpy(&ret_val, data.data() + addr, sizeof(ret_val));
+        return ret_val;
     }
 
     template<typename Store_t>
     void store(addr_t addr, reg_t val)
     {
-        //TODO: memcpy(bitcast)
-        *(reinterpret_cast<Store_t *>((data.data() + addr))) = val;
+        memcpy(data.data() + addr, &val, sizeof(val));
     }
 };
 
@@ -165,25 +97,14 @@ public:
     {
         output_log = fopen(filename, "w+");
         if(!output_log) {std::cout << "Failed to open a file " << filename << std::endl;}
-        regs.push_back(Register(RegType::ZERO_REG, 0));
-        regs.push_back(Register(RegType::DEFAULT_REG, 1));
-        regs.push_back(Register(RegType::STACK_REG, 2));
-        // regs.reserve(NRegs);
-        // regs[0] = Register(RegType::ZERO_REG, 0);
-        // regs[1] = Register(RegType::DEFAULT_REG, 1);
-        // regs[2] = Register(RegType::STACK_REG, 2);
-        for (int i = 3; i < NRegs; ++i)
+        for(int i = 0; i < NRegs; i++)
         {
-            regs.push_back(Register(RegType::DEFAULT_REG, i));
-            // regs[i] = Register(RegType::DEFAULT_REG,i);
+            regs.push_back(Register(i));
         }
     }
-    ~Cpu() {}
 
-    //TODO: NOEXCEPT
     bool isdone() const noexcept {return done;}
-    //TODO: INSTR SIZE AS ARG
-    void advancePc(std::size_t step = sizeof(reg_t)) {pc_ += step;}
+    void advancePc(std::size_t step = RV32I_INTR_SIZE) {pc_ += step;}
     reg_t getPc() const noexcept {return pc_;}
     void setPc(reg_t val) noexcept {pc_ = val;}
 
@@ -216,8 +137,7 @@ public:
     reg_t fetch() {return mem->load<reg_t>(pc_);}
     reg_t fetch(addr_t addr) {return mem->load<reg_t>(addr);}
 
-    //TODO: AS A MEMBER-FUNC
-    friend Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb);
+    func_t translate(std::vector<Instr> &bb);
 };
 
 struct Instr
@@ -231,11 +151,33 @@ struct Instr
     int rs2_id;
 
     size_t size;
-    void (*exec)(Cpu &cpu, Instr &instr);
+    // void (*exec)(Cpu &cpu, Instr &instr);
+    std::function<void(Cpu &, Instr &)> exec;
 };
 
-Instr decode(reg_t instr);
+    const std::vector<std::function<void(Cpu &, Instr &)>> executeImmFuncs =
+    {
+        // ADDI  = 0b0000
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) + instr.imm);cpu.advancePc();},
+        // SLLI  = 0b0001
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) << (instr.imm & 0b11111));cpu.advancePc();},
+        // SLTI  = 0b0010
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) < instr.imm);cpu.advancePc();},
+        // SLTIU = 0b0011
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, static_cast<std::uint32_t>(cpu.getReg(instr.rs1_id)) < static_cast<std::uint32_t>(instr.imm));cpu.advancePc();},
+        // XORI  = 0b0100
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) ^ instr.imm);cpu.advancePc();},
+        // SRLI  = 0b0101
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, static_cast<std::uint32_t>(cpu.getReg(instr.rs1_id)) >> instr.imm);cpu.advancePc();},
+        // ORI   = 0b0110
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) | instr.imm);cpu.advancePc();},
+        // ANDI  = 0b0111
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) & instr.imm);cpu.advancePc();},
+        // SRAI  = 0b1000
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, static_cast<std::uint32_t>(cpu.getReg(instr.rs1_id)) >> instr.imm);cpu.advancePc();},
+    };
 
+Instr decode(reg_t instr);
 void executeImm (Cpu &cpu, Instr &instr);
 void executeOp (Cpu &cpu, Instr &instr);
 void executeBranch (Cpu &cpu, Instr &instr);
@@ -250,12 +192,14 @@ void executeFence(Cpu &cpu, Instr &instr);
 void execute(Cpu &cpu, Instr &instr);
 void interpret_block(Cpu &cpu, std::vector<Instr> instrs);
 
+
+
 //translateion
 const size_t BB_AVERAGE_SIZE = 10;
 const size_t BB_THRESHOLD = 10;
 bool is_bb_end(Instr &instr);
 
-asmjit::x86::Mem toDwordPtr(Register &reg);
+// asmjit::x86::Mem toDwordPtr(Register &reg);
 
 void translateOp(Instr &instr, TranslationAttr &attr)    ;
 void translateImm(Instr &instr, TranslationAttr &attr)   ;
@@ -264,7 +208,7 @@ void translateLoad (Instr &instr, TranslationAttr &attr) ;
 void translateStore(Instr &instr, TranslationAttr &attr) ;
 
 std::vector<Instr> lookup(Cpu &cpu, addr_t addr);
-Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb);
+// Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb);
 
 #endif
 

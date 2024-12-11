@@ -23,10 +23,11 @@ add_executable(test test_execute.cpp test_decode.cpp test_translate.cpp main.cpp
 target_link_libraries(test
     PRIVATE
     rv32i
-    pthread
-    gtest
-    gmock
-    gtest_main
+    GTest::gmock_main
+    # pthread
+    # gtest
+    # gmock
+    # gtest_main
 )
 
 target_include_directories(test

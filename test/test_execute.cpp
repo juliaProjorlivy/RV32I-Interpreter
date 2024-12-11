@@ -29,8 +29,8 @@ TEST_F(RV32I_Test, TEST_EXECUTE_SLTI)
 
     //test slti
     cpu->setReg(4, -1);
-    instr = decode(INSTR_TO_TEST::slti_x3_x4_5);
-    execute( *cpu, instr);
+    Instr new_instr = decode(INSTR_TO_TEST::slti_x3_x4_5);
+    execute( *cpu, new_instr);
     EXPECT_EQ(cpu->getReg(3), 1);
     EXPECT_EQ(cpu->getReg(4), -1);
     EXPECT_EQ(cpu->getPc(), 8);
@@ -44,8 +44,8 @@ TEST_F(RV32I_Test, TEST_EXECUTE_SLTIU)
     EXPECT_EQ(cpu->getReg(4), -1);
 
     cpu->setReg(4, 1);
-    instr = decode(INSTR_TO_TEST::sltiu_x3_x4_5);
-    execute( *cpu, instr);
+    Instr new_instr = decode(INSTR_TO_TEST::sltiu_x3_x4_5);
+    execute( *cpu, new_instr);
     EXPECT_EQ(cpu->getReg(3), 1);
     EXPECT_EQ(cpu->getReg(4), 1);
 }
@@ -61,11 +61,11 @@ TEST_F(RV32I_Test, TEST_EXECUTE_BEQ)
     EXPECT_EQ(cpu->getPc(), 4);
 
     cpu->setReg(4, 2);
-    instr = decode(INSTR_TO_TEST::beq_x3_x4_32);
-    EXPECT_EQ(instr.rs1_id, 3);
-    EXPECT_EQ(instr.rs2_id, 4);
-    EXPECT_EQ(instr.imm, 32);
-    execute( *cpu, instr);
+    Instr new_instr = decode(INSTR_TO_TEST::beq_x3_x4_32);
+    EXPECT_EQ(new_instr.rs1_id, 3);
+    EXPECT_EQ(new_instr.rs2_id, 4);
+    EXPECT_EQ(new_instr.imm, 32);
+    execute( *cpu,new_instr);
     EXPECT_EQ(cpu->getReg(3), 2);
     EXPECT_EQ(cpu->getReg(4), 2);
     EXPECT_EQ(cpu->getPc(), 36);

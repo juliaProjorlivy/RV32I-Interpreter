@@ -41,9 +41,9 @@ namespace I
         SLTIU = 0b0011,
         XORI  = 0b0100,
         SRLI  = 0b0101,
-        SRAI  = 0b1101,
         ORI   = 0b0110,
         ANDI  = 0b0111,
+        SRAI  = 0b1000,
     };}
     namespace Load {
     enum class funct3 : std::uint8_t
@@ -77,15 +77,15 @@ namespace R
     enum class funct3 : std::uint8_t
     {
         ADD  = 0b0000,
-        SUB  = 0b1000,
         SLL  = 0b0001,
         SLT  = 0b0010,
         SLTU = 0b0011,
         XOR  = 0b0100,
         SRL  = 0b0101,
-        SRA  = 0b1101,
         OR   = 0b0110,
         AND  = 0b0111,
+        SUB  = 0b1000,
+        SRA  = 0b1001,
     };}
 };
 
@@ -130,6 +130,7 @@ namespace J
 
 Opcode  getOpcode(reg_t instr);
 uint8_t getfunct3(reg_t instr);
+uint8_t getfunct7(reg_t instr);
 int     getRdId(reg_t instr);
 int     getRs1Id(reg_t instr);
 int     getRs2Id(reg_t instr);

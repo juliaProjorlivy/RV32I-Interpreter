@@ -2,36 +2,6 @@
 #include "cpu.hpp"
 #include <cstdint>
 
-//TODO: GET RID OF MAGIC NUMBERS
-Opcode getOpcode(reg_t instr)
-{
-    return (Opcode)(instr & 0b01111111);
-}
-
-uint8_t getfunct3(reg_t instr)
-{
-    return ((instr >> 12) & 0b111);
-}
-
-uint8_t getfunct7(reg_t instr)
-{
-    return ((instr >> 30) & 1);
-}
-
-int getRdId(reg_t instr)
-{
-    return (instr >> 7) & regsize;
-}
-
-int getRs1Id(reg_t instr)
-{
-    return (instr >> 15) & regsize;
-}
-
-int getRs2Id(reg_t instr)
-{
-    return (instr >> 20) & regsize;
-}
 
 //TODO: DECODE FULLY (FUNC)
 Instr decode(reg_t instr_)
@@ -44,9 +14,13 @@ Instr decode(reg_t instr_)
             {
                 instr.funct3 = getfunct3(instr_);
                 instr.imm    = I::getImm(instr_);
+                if(static_cast<I::Imm::funct3>(instr.funct3) == I::Imm::funct3::SRLI && instr.imm >> 5)
+                {
+                    instr.funct3 = static_cast<uint8_t>(I::Imm::funct3::SRAI);
+                }
                 instr.rd_id  = getRdId(instr_);
                 instr.rs1_id = getRs1Id(instr_);
-                instr.exec   = executeImm;
+                instr.exec   = executeImmFuncs[instr.funct3];
                 break;
             }
         case Opcode::Op:
@@ -133,6 +107,36 @@ Instr decode(reg_t instr_)
     instr.opcode = opcode;
     instr.size = RV32I_INTR_SIZE;
     return instr;
+}
+
+Opcode getOpcode(reg_t instr)
+{
+    return (Opcode)(instr & 0b01111111);
+}
+
+uint8_t getfunct3(reg_t instr)
+{
+    return ((instr >> 12) & 0b111);
+}
+
+uint8_t getfunct7(reg_t instr)
+{
+    return ((instr >> 30) & 1);
+}
+
+int getRdId(reg_t instr)
+{
+    return (instr >> 7) & regsize;
+}
+
+int getRs1Id(reg_t instr)
+{
+    return (instr >> 15) & regsize;
+}
+
+int getRs2Id(reg_t instr)
+{
+    return (instr >> 20) & regsize;
 }
 
 imm_t I::getImm(reg_t instr)
