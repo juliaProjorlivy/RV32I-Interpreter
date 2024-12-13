@@ -78,6 +78,7 @@ class Cpu
 private:
     static const int NRegs = 32;
     reg_t pc_;
+    reg_t next_pc_;
     std::vector<Register> regs {};
     Memory *mem;
     bool done {false};
@@ -93,7 +94,7 @@ public:
     std::unordered_map<addr_t, func_t> bb_translated {};
     FILE *output_log;
 
-    Cpu (Memory *mem_, addr_t entry = 0, const char *filename = "x86_64") : pc_(entry), mem(mem_)
+    Cpu (Memory *mem_, addr_t entry = 0, const char *filename = "x86_64") : pc_(entry), next_pc_(entry), mem(mem_)
     {
         output_log = fopen(filename, "w+");
         if(!output_log) {std::cout << "Failed to open a file " << filename << std::endl;}
@@ -104,9 +105,12 @@ public:
     }
 
     bool isdone() const noexcept {return done;}
-    void advancePc(std::size_t step = RV32I_INTR_SIZE) {pc_ += step;}
+    void advancePc(std::size_t step = RV32I_INTR_SIZE) {pc_ += step; next_pc_ = pc_;}
+    void advanceNextPc(std::size_t step = RV32I_INTR_SIZE) {next_pc_+= step;}
     reg_t getPc() const noexcept {return pc_;}
-    void setPc(reg_t val) noexcept {pc_ = val;}
+    reg_t getNextPc() const noexcept {return next_pc_;}
+    void setPc(reg_t val) noexcept {pc_ = val; next_pc_ = val;}
+    void setNextPc(reg_t val) noexcept {next_pc_ = val;}
 
     void setReg(int ireg, reg_t value) {regs[ireg].setVal(value);}
     reg_t getReg(int ireg) const {return regs[ireg].getVal();}
@@ -158,23 +162,101 @@ struct Instr
     const std::vector<std::function<void(Cpu &, Instr &)>> executeImmFuncs =
     {
         // ADDI  = 0b0000
-        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) + instr.imm);cpu.advancePc();},
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) + instr.imm);},
         // SLLI  = 0b0001
-        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) << (instr.imm & 0b11111));cpu.advancePc();},
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) << (instr.imm & 0b11111));},
         // SLTI  = 0b0010
-        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) < instr.imm);cpu.advancePc();},
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) < instr.imm);},
         // SLTIU = 0b0011
-        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, static_cast<std::uint32_t>(cpu.getReg(instr.rs1_id)) < static_cast<std::uint32_t>(instr.imm));cpu.advancePc();},
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, static_cast<std::uint32_t>(cpu.getReg(instr.rs1_id)) < static_cast<std::uint32_t>(instr.imm));},
         // XORI  = 0b0100
-        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) ^ instr.imm);cpu.advancePc();},
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) ^ instr.imm);},
         // SRLI  = 0b0101
-        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, static_cast<std::uint32_t>(cpu.getReg(instr.rs1_id)) >> instr.imm);cpu.advancePc();},
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, static_cast<std::uint32_t>(cpu.getReg(instr.rs1_id)) >> instr.imm);},
         // ORI   = 0b0110
-        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) | instr.imm);cpu.advancePc();},
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) | instr.imm);},
         // ANDI  = 0b0111
-        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) & instr.imm);cpu.advancePc();},
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) & instr.imm);},
         // SRAI  = 0b1000
-        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, static_cast<std::uint32_t>(cpu.getReg(instr.rs1_id)) >> instr.imm);cpu.advancePc();},
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, static_cast<std::uint32_t>(cpu.getReg(instr.rs1_id)) >> instr.imm);},
+    };
+
+const std::vector<std::function<void(Cpu &, Instr &)>> executeOpFuncs =
+    {
+        // ADD  = 0b0000,
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) + cpu.getReg(instr.rs2_id));},
+        // SLL  = 0b0001,
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) << (cpu.getReg(instr.rs2_id) & 0b11111));},
+        // SLT  = 0b0010,
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) < cpu.getReg(instr.rs2_id));},
+        // SLTU = 0b0011,
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, static_cast<uint32_t>(cpu.getReg(instr.rs1_id)) < static_cast<uint32_t>(cpu.getReg(instr.rs2_id)));},
+        // XOR  = 0b0100,
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) ^ cpu.getReg(instr.rs2_id));},
+        // SRL  = 0b0101,
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, static_cast<uint32_t>(cpu.getReg(instr.rs1_id)) >> cpu.getReg(instr.rs2_id));},
+        // OR   = 0b0110,
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) | cpu.getReg(instr.rs2_id));},
+        // AND  = 0b0111,
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) & cpu.getReg(instr.rs2_id));},
+        // SUB  = 0b1000,
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) - cpu.getReg(instr.rs2_id));},
+        // SRA  = 0b1001,
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) >> cpu.getReg(instr.rs2_id));},
+    };
+
+const std::vector<std::function<void(Cpu &, Instr &)>> executeBranchFuncs =
+    {
+        // BEQ  = 0b000
+        [] (Cpu &cpu, Instr &instr) {if (cpu.getReg(instr.rs1_id) == cpu.getReg(instr.rs2_id)) {cpu.advanceNextPc(instr.imm);}},
+        // BNE  = 0b001
+        [] (Cpu &cpu, Instr &instr) {if (cpu.getReg(instr.rs1_id) != cpu.getReg(instr.rs2_id)) {cpu.advanceNextPc(instr.imm);}},
+        // FILLER = 0b010
+        [] (Cpu &cpu, Instr &instr) {},
+        // FILLER = 0b011
+        [] (Cpu &cpu, Instr &instr) {},
+        // BLT  = 0b100
+        [] (Cpu &cpu, Instr &instr) {if (cpu.getReg(instr.rs1_id) < cpu.getReg(instr.rs2_id)) {cpu.advanceNextPc(instr.imm);}},
+        // BGE  = 0b101
+        [] (Cpu &cpu, Instr &instr) {if (cpu.getReg(instr.rs1_id) > cpu.getReg(instr.rs2_id)) {cpu.advanceNextPc(instr.imm);}},
+        // BLTU = 0b110
+        [] (Cpu &cpu, Instr &instr) {if (static_cast<uint32_t>(cpu.getReg(instr.rs1_id)) < static_cast<uint32_t>(cpu.getReg(instr.rs2_id))) {cpu.advanceNextPc(instr.imm);}},
+        // BGEU = 0b111
+        [] (Cpu &cpu, Instr &instr) {if (static_cast<uint32_t>(cpu.getReg(instr.rs1_id)) > static_cast<uint32_t>(cpu.getReg(instr.rs2_id))) {cpu.advanceNextPc(instr.imm);}},
+    };
+
+const std::vector<std::function<void(Cpu &, Instr &)>> executeLoadFuncs =
+    {
+        // LB  = 0b000
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.load<byte_t>(instr.imm + cpu.getReg(instr.rs1_id)));},
+        // LH  = 0b001
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.load<half_t>(instr.imm + cpu.getReg(instr.rs1_id)));},
+        // LW  = 0b010
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.load<word_t>(instr.imm + cpu.getReg(instr.rs1_id)));},
+        // FILLER = 0b011
+        [] (Cpu &cpu, Instr &instr) {},
+        // LBU = 0b100
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, (0x000000ff & cpu.load<byte_t>(instr.imm + cpu.getReg(instr.rs1_id))));},
+        // LHU = 0b101
+        [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, (0x0000ffff & cpu.load<half_t>(instr.imm + cpu.getReg(instr.rs1_id))));},
+    };
+
+const std::vector<std::function<void(Cpu &, Instr &)>> executeStoreFuncs =
+    {
+        // SB = 0b000
+        [] (Cpu &cpu, Instr &instr) {cpu.store<byte_t>((addr_t)(instr.imm + cpu.getReg(instr.rs1_id)), cpu.getReg(instr.rs2_id));},
+        // SH = 0b001
+        [] (Cpu &cpu, Instr &instr) {cpu.store<half_t>((addr_t)(instr.imm + cpu.getReg(instr.rs1_id)), cpu.getReg(instr.rs2_id));},
+        // SW = 0b010
+        [] (Cpu &cpu, Instr &instr) {cpu.store<word_t>((addr_t)(instr.imm + cpu.getReg(instr.rs1_id)), cpu.getReg(instr.rs2_id));},
+    };
+
+void executeEbreak(Cpu &cpu,[[maybe_unused]] Instr &instr);
+void executeEcall(Cpu &cpu,[[maybe_unused]] Instr &instr);
+const std::vector<std::function<void(Cpu &, Instr &)>> executeSystemFuncs =
+    {
+        executeEcall,
+        executeEbreak,
     };
 
 Instr decode(reg_t instr);
@@ -190,7 +272,7 @@ void executeJalr(Cpu &cpu, Instr &instr);
 void executeJal(Cpu &cpu, Instr &instr);
 void executeFence(Cpu &cpu, Instr &instr);
 void execute(Cpu &cpu, Instr &instr);
-void interpret_block(Cpu &cpu, std::vector<Instr> instrs);
+void interpret_block(Cpu &cpu, std::vector<Instr> &instrs);
 
 
 

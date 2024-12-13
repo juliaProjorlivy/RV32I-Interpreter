@@ -8,14 +8,41 @@
 #include <fcntl.h>
 #include <vector>
 
-void interpret_block(Cpu &cpu, std::vector<Instr> instrs)
+void interpret_block(Cpu &cpu, std::vector<Instr> &instrs)
 {
-    for(auto instr : instrs)
+    auto instr = instrs.begin();
+    for(; instr != (instrs.end() - 1); ++instr)
     {
-        instr.exec(cpu, instr);
+        if(instr->opcode == Opcode::Auipc)
+        {
+            addr_t pc_offset = (instr - instrs.begin()) * RV32I_INTR_SIZE;
+            cpu.advanceNextPc(pc_offset);
+            instr->exec(cpu, *instr);
+            cpu.setNextPc(cpu.getPc());
+        }
+        else
+        {
+            instr->exec(cpu, *instr);
+        }
+    }
+
+    //Last branch/jal/jalr instruction
+    cpu.advanceNextPc((instrs.size() - 1) * RV32I_INTR_SIZE);
+    instr->exec(cpu, *instr);
+
+    //If branch/jump happened
+    if(cpu.getNextPc() != cpu.getPc())
+    {
+        cpu.setPc(cpu.getNextPc());
+    }
+    //If no branch
+    else
+    {
+        cpu.advancePc(RV32I_INTR_SIZE);
     }
 }
 
+//TODO: IS USED ONLY IN TESTS -> GET RID OF
 void execute (Cpu &cpu, Instr &instr)
 {
     instr.exec(cpu, instr);
@@ -89,8 +116,19 @@ void executeImm (Cpu &cpu, Instr &instr)
         //TODO: THROW AN ERROR
         default: {}
     }
-    cpu.advancePc();
+    // cpu.advancePc();
 }
+
+        // ADD  = 0b0000,
+        // SLL  = 0b0001,
+        // SLT  = 0b0010,
+        // SLTU = 0b0011,
+        // XOR  = 0b0100,
+        // SRL  = 0b0101,
+        // OR   = 0b0110,
+        // AND  = 0b0111,
+        // SUB  = 0b1000,
+        // SRA  = 0b1001,
 
 void executeOp (Cpu &cpu, Instr &instr)
 {
@@ -138,7 +176,6 @@ void executeOp (Cpu &cpu, Instr &instr)
             }
         case funct3::SLL:
             {
-                //if SLTIU
                 instr.rs2_id = instr.rs2_id & 0b11111;
                 cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) << cpu.getReg(instr.rs2_id));
                 break;
@@ -160,9 +197,15 @@ void executeOp (Cpu &cpu, Instr &instr)
         //TODO: THROW AND ERROR
         default: {}
     }
-    cpu.advancePc();
+    // cpu.advancePc();
 }
 
+        // BEQ  = 0b000,
+        // BNE  = 0b001,
+        // BLT  = 0b100,
+        // BGE  = 0b101,
+        // BLTU = 0b110,
+        // BGEU = 0b111,
 void executeBranch (Cpu &cpu, Instr &instr)
 {
     //TODO: NEXT_PC
@@ -171,8 +214,10 @@ void executeBranch (Cpu &cpu, Instr &instr)
     {
         case funct3::BEQ:
             {
-                if (cpu.getReg(instr.rs1_id) == cpu.getReg(instr.rs2_id)) {cpu.advancePc(instr.imm);}
-                else {cpu.advancePc();}
+                // if (cpu.getReg(instr.rs1_id) == cpu.getReg(instr.rs2_id)) {cpu.advancePc(instr.imm);}
+                // else {cpu.advancePc();}
+                if (cpu.getReg(instr.rs1_id) == cpu.getReg(instr.rs2_id)) {cpu.advanceNextPc(instr.imm);}
+                // else {cpu.advancePc();}
                 return;
             }
         case funct3::BNE:
@@ -208,6 +253,12 @@ void executeBranch (Cpu &cpu, Instr &instr)
     }
 }
 
+        // LB  = 0b000
+        // LH  = 0b001
+        // LW  = 0b010
+        // LBU = 0b100
+        // LHU = 0b101
+     
 void executeLoad (Cpu &cpu, Instr &instr)
 {
     using namespace I::Load;
@@ -239,8 +290,12 @@ void executeLoad (Cpu &cpu, Instr &instr)
                 break;
             }
     }
-    cpu.advancePc();
+    // cpu.advancePc();
 }
+
+        // SB = 0b000
+        // SH = 0b001
+        // SW = 0b010
 
 //TODO: CONST
 //TODO: CLANG FORMAT
@@ -265,88 +320,89 @@ void executeStore (Cpu &cpu, Instr &instr)
                 break;
             }
     }
-    cpu.advancePc();
 }
 
 void executeLui(Cpu &cpu, Instr &instr)
 {
     cpu.setReg(instr.rd_id, (instr.imm << 12));
-    cpu.advancePc();
 }
 
 void executeAuipc(Cpu &cpu, Instr &instr)
 {
-    cpu.setReg(instr.rd_id, cpu.getPc() + (instr.imm << 12));
-    cpu.advancePc();
+    cpu.setReg(instr.rd_id, cpu.getNextPc() + (instr.imm << 12));
 }
 
 void executeJalr(Cpu &cpu, Instr &instr)
 {
-    cpu.setReg(instr.rd_id, cpu.getPc() + instr.size);
+    cpu.setReg(instr.rd_id, cpu.getNextPc() + instr.size);
     imm_t target_addr = (cpu.getReg(instr.rs1_id) + instr.imm) & 0xfffffffe; //least-significant bit to zero
-    cpu.setPc(target_addr);
+    cpu.setNextPc(target_addr);
 }
 
 void executeJal(Cpu &cpu, Instr &instr)
 {
-    cpu.setReg(instr.rd_id, cpu.getPc() + instr.size);
-    cpu.advancePc(instr.imm);
+    cpu.setReg(instr.rd_id, cpu.getNextPc() + instr.size);
+    cpu.advanceNextPc(instr.imm);
 }
-void executeSystem(Cpu &cpu,[[maybe_unused]] Instr &instr)
+
+void executeEbreak(Cpu &cpu,[[maybe_unused]] Instr &instr) {cpu.setDone();}
+void executeEcall(Cpu &cpu,[[maybe_unused]] Instr &instr)
 {
-    //EBREAK
-    if(instr.imm) {cpu.setDone();}
-    //ECALL
-    else
+    switch (static_cast<Syscall::rv>(cpu.getReg(17)))
     {
-        switch (static_cast<Syscall::rv>(cpu.getReg(17)))
-        {
-            case Syscall::rv::READ:
+        case Syscall::rv::READ:
             {
                 int fd = cpu.getReg(10);
                 size_t buf_size = cpu.getReg(12);
                 addr_t start_buf = cpu.getReg(11);
+
                 std::vector<byte_t> buf = {};
                 buf.reserve(buf_size);
                 ssize_t ret_val = read(fd, static_cast<void *>(buf.data()), buf_size);
+
                 for(int i = 0; i < buf_size; i++)
                 {
                     cpu.store<byte_t>(start_buf + i * sizeof(byte_t), buf[i]);
                 }
+
                 cpu.setReg(1, ret_val);
                 break;
             }
-            case Syscall::rv::WRITE:
+        case Syscall::rv::WRITE:
             {
                 size_t buf_size = cpu.getReg(12);
                 addr_t start_buf = cpu.getReg(11);
+
                 std::vector<byte_t> buf = {};
+
                 for(int i = 0; i < buf_size; i++)
                 {
                     buf.push_back(cpu.load<byte_t>(start_buf + i * sizeof(byte_t)));
                 }
                 ssize_t ret_val = write(cpu.getReg(10), static_cast<void *>(buf.data()), buf_size);
+
                 cpu.setReg(1, ret_val);
                 break;
             }
-            case Syscall::rv::EXIT:
+        case Syscall::rv::EXIT:
             {
                 //TODO: RETURN VALUE
+                reg_t exit_code = cpu.getReg(10);
                 cpu.setDone();
                 break;
             }
-            case Syscall::rv::MMAP:
+        case Syscall::rv::MMAP:
             {
 
             }
-            case Syscall::rv::CLOSE:
+        case Syscall::rv::CLOSE:
             {
                 int fd = cpu.getReg(10);
                 int ret_val = close(fd);
                 cpu.setReg(1, ret_val);
                 break;
             }
-            case Syscall::rv::LSEEK:
+        case Syscall::rv::LSEEK:
             {
                 int fd = cpu.getReg(10);
                 __off_t offset = cpu.getReg(11);
@@ -355,10 +411,8 @@ void executeSystem(Cpu &cpu,[[maybe_unused]] Instr &instr)
                 cpu.setReg(1, ret_val);
                 break;
             }
-            default: {}
-        }
+        default: {}
     }
-    cpu.advancePc();
 }
 
 void executeFence([[maybe_unused]] Cpu &cpu,[[maybe_unused]] Instr &instr) {}

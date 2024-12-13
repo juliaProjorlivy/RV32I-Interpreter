@@ -27,10 +27,21 @@ Instr decode(reg_t instr_)
             {
                 instr.funct3 = getfunct3(instr_);
                 instr.funct7 = getfunct7(instr_);
+                if(instr.funct7)
+                {
+                    if(static_cast<R::Op::funct3>(instr.funct3) == R::Op::funct3::ADD)
+                    {
+                        instr.funct3 = static_cast<uint8_t>(R::Op::funct3::SUB);
+                    }
+                    else if(static_cast<R::Op::funct3>(instr.funct3) == R::Op::funct3::SRL)
+                    {
+                        instr.funct3 = static_cast<uint8_t>(R::Op::funct3::SRA);
+                    }
+                }
                 instr.rd_id  = getRdId(instr_);
                 instr.rs1_id = getRs1Id(instr_);
                 instr.rs2_id = getRs2Id(instr_);
-                instr.exec   = executeOp;
+                instr.exec   = executeOpFuncs[instr.funct3];
                 break;
             }
         case Opcode::Branch:
@@ -39,7 +50,7 @@ Instr decode(reg_t instr_)
                 instr.imm    = B::getImm(instr_);
                 instr.rs1_id = getRs1Id(instr_);
                 instr.rs2_id = getRs2Id(instr_);
-                instr.exec   = executeBranch;
+                instr.exec   = executeBranchFuncs[instr.funct3];
                 break;
             }
         case Opcode::Load:
@@ -48,7 +59,7 @@ Instr decode(reg_t instr_)
                 instr.imm    = I::getImm(instr_);
                 instr.rd_id  = getRdId(instr_);
                 instr.rs1_id = getRs1Id(instr_);
-                instr.exec   = executeLoad;
+                instr.exec   = executeLoadFuncs[instr.funct3];
                 break;
             }
         case Opcode::Store:
@@ -57,13 +68,14 @@ Instr decode(reg_t instr_)
                 instr.imm    = S::getImm(instr_);
                 instr.rs1_id = getRs1Id(instr_);
                 instr.rs2_id = getRs2Id(instr_);
-                instr.exec   = executeStore;
+                instr.exec   = executeStoreFuncs[instr.funct3];
                 break;
             }
         case Opcode::System:
             {
                 instr.imm  = I::getImm(instr_);
-                instr.exec = executeSystem;
+                instr.funct3 = instr.imm > 0;
+                instr.exec = executeSystemFuncs[instr.funct3];
                 break;
             }
         case Opcode::Lui:

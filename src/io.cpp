@@ -3,6 +3,7 @@
 #include <elfio/elfio.hpp>
 #include <elfio/elf_types.hpp>
 #include <elfio/elfio_segment.hpp>
+#include <vector>
 
 void write_to_mem(Cpu &cpu, int Ninstr, const char *data_ptr, addr_t entry)
 {
@@ -59,6 +60,51 @@ int elfio_manager(const char *filename, Cpu &cpu)
     return 0;
 }
 
+bool is_bb_end(Instr &instr)
+{
+    switch (instr.opcode)
+    {
+        case Opcode::System:
+            {
+                if(static_cast<I::System::funct3>(instr.funct3) == I::System::funct3::EBREAK) {return true;}
+                return false;
+            }
+        case Opcode::Branch:
+        case Opcode::Jal:
+        case Opcode::Jalr:
+            return true;
+        default:
+            return false;
+    }
+    return false;
+}
+
+std::vector<Instr> lookup(Cpu &cpu, addr_t addr)
+{
+    auto basic_block_res = cpu.bb_cache.find(addr);
+
+    //if bb was not found -> update bb_cache
+    if(basic_block_res == cpu.bb_cache.end())
+    {
+        Instr cur_instr {};
+        addr_t cur_addr = addr;
+        std::vector<Instr> bb;
+        bb.reserve(BB_AVERAGE_SIZE);
+
+        do
+        {
+            reg_t command = cpu.fetch(cur_addr);
+            cur_instr = decode(command);
+            bb.push_back(cur_instr);
+            cur_addr += cur_instr.size;
+        } while (!is_bb_end(cur_instr));
+
+        basic_block_res = cpu.bb_cache.emplace(addr, bb).first;
+    }
+
+    return basic_block_res->second;
+}
+
 int run_simulation(Cpu &cpu)
 {
     while(!cpu.isdone())
@@ -88,7 +134,7 @@ int run_simulation(Cpu &cpu)
             }
             //TODO: HANDLE AN ERROR
         }
-        auto instrs = lookup(cpu, cpu.getPc());
+        std::vector<Instr> instrs = lookup(cpu, cpu.getPc());
         interpret_block (cpu, instrs);
     }
 

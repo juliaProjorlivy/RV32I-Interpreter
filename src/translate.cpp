@@ -8,52 +8,6 @@
 #include "rv32i.hpp"
 #include <cstdint>
 
-bool is_bb_end(Instr &instr)
-{
-    switch (instr.opcode)
-    {
-        case Opcode::Branch:
-        case Opcode::Jal:
-        case Opcode::Jalr:
-        case Opcode::System:
-            return true;
-        default:
-            return false;
-    }
-    return false;
-}
-
-std::vector<Instr> lookup(Cpu &cpu, addr_t addr)
-{
-    auto basic_block_res = cpu.bb_cache.find(addr);
-
-    //if bb was not found -> update bb_cache
-    if(basic_block_res == cpu.bb_cache.end())
-    {
-        Instr cur_instr {};
-        addr_t cur_addr = addr;
-        std::vector<Instr> bb;
-        bb.reserve(BB_AVERAGE_SIZE);
-
-        do
-        {
-            reg_t command = cpu.fetch(cur_addr);
-            cur_instr = decode(command);
-            bb.push_back(cur_instr);
-            cur_addr += sizeof(addr_t);
-        } while (!is_bb_end(cur_instr));
-
-        basic_block_res = cpu.bb_cache.emplace(addr, bb).first;
-    }
-
-    return basic_block_res->second;
-}
-
-// asmjit::x86::Mem toDwordPtr(Register &reg)
-// {
-//     return asmjit::x86::dword_ptr((uint64_t)(&(reg.self_->val_)));
-// }
-
 void translateOp(Instr &instr, TranslationAttr &attr)
 {
     switch (static_cast<R::Op::funct3>(instr.funct3))

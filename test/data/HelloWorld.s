@@ -14,3 +14,4 @@ main:
     li a0, 0xfe         #ret value
     li a7, 93           #exit syscall
     ecall
+    ebreak
