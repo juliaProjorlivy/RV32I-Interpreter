@@ -21,6 +21,7 @@ Instr decode(reg_t instr_)
                 instr.rd_id  = getRdId(instr_);
                 instr.rs1_id = getRs1Id(instr_);
                 instr.exec   = executeImmFuncs[instr.funct3];
+                instr.translate = translateImm;
                 break;
             }
         case Opcode::Op:
@@ -42,6 +43,7 @@ Instr decode(reg_t instr_)
                 instr.rs1_id = getRs1Id(instr_);
                 instr.rs2_id = getRs2Id(instr_);
                 instr.exec   = executeOpFuncs[instr.funct3];
+                instr.translate = translateOp;
                 break;
             }
         case Opcode::Branch:
@@ -51,6 +53,7 @@ Instr decode(reg_t instr_)
                 instr.rs1_id = getRs1Id(instr_);
                 instr.rs2_id = getRs2Id(instr_);
                 instr.exec   = executeBranchFuncs[instr.funct3];
+                instr.translate = translateBranch;
                 break;
             }
         case Opcode::Load:
@@ -60,6 +63,7 @@ Instr decode(reg_t instr_)
                 instr.rd_id  = getRdId(instr_);
                 instr.rs1_id = getRs1Id(instr_);
                 instr.exec   = executeLoadFuncs[instr.funct3];
+                instr.translate = translateLoad;
                 break;
             }
         case Opcode::Store:
@@ -69,13 +73,23 @@ Instr decode(reg_t instr_)
                 instr.rs1_id = getRs1Id(instr_);
                 instr.rs2_id = getRs2Id(instr_);
                 instr.exec   = executeStoreFuncs[instr.funct3];
+                instr.translate = translateStore;
                 break;
             }
         case Opcode::System:
             {
                 instr.imm  = I::getImm(instr_);
                 instr.funct3 = instr.imm > 0;
-                instr.exec = executeSystemFuncs[instr.funct3];
+                if(instr.imm)
+                {
+                    instr.exec = executeEbreak;
+                    instr.translate = translateEbreak;
+                }
+                else
+                {
+                    instr.exec = executeEcall;
+                    instr.translate = translateEcall;
+                }
                 break;
             }
         case Opcode::Lui:
@@ -83,6 +97,7 @@ Instr decode(reg_t instr_)
                 instr.imm   = U::getImm(instr_);
                 instr.rd_id = getRdId(instr_);
                 instr.exec  = executeLui;
+                instr.translate = translateLui;
                 break;
             }
         case Opcode::Auipc:
@@ -90,6 +105,7 @@ Instr decode(reg_t instr_)
                 instr.imm   = U::getImm(instr_);
                 instr.rd_id = getRdId(instr_);
                 instr.exec  = executeAuipc;
+                instr.translate = translateAuipc;
                 break;
             }
         case Opcode::Jalr:
@@ -98,6 +114,7 @@ Instr decode(reg_t instr_)
                 instr.rd_id  = getRdId(instr_);
                 instr.rs1_id = getRs1Id(instr_);
                 instr.exec   = executeJalr;
+                instr.translate = translateJalr;
                 break;
             }
         case Opcode::Jal:
@@ -105,11 +122,13 @@ Instr decode(reg_t instr_)
                 instr.imm   = J::getImm(instr_);
                 instr.rd_id = getRdId(instr_);
                 instr.exec  = executeJal;
+                instr.translate = translateJal;
                 break;
             }
         case Opcode::Fence:
             {
                 instr.exec = executeFence;
+                instr.translate = translateFence;
                 break;
             }
         // TODO: DEAL WITH ERROR

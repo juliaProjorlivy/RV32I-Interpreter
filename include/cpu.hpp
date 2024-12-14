@@ -62,14 +62,14 @@ public:
     reg_t load(addr_t addr) const
     {
         reg_t ret_val = 0;
-        memcpy(&ret_val, data.data() + addr, sizeof(ret_val));
+        memcpy(&ret_val, data.data() + addr, sizeof(Value_t));
         return ret_val;
     }
 
     template<typename Store_t>
     void store(addr_t addr, reg_t val)
     {
-        memcpy(data.data() + addr, &val, sizeof(val));
+        memcpy(data.data() + addr, &val, sizeof(Store_t));
     }
 };
 
@@ -141,7 +141,19 @@ public:
     reg_t fetch() {return mem->load<reg_t>(pc_);}
     reg_t fetch(addr_t addr) {return mem->load<reg_t>(addr);}
 
-    func_t translate(std::vector<Instr> &bb);
+    friend func_t translate(    Cpu &cpu, std::vector<Instr> &bb);
+    friend void translateImm(   Cpu &cpu, Instr &instr, TranslationAttr &attr);
+    friend void translateOp(    Cpu &cpu, Instr &instr, TranslationAttr &attr);
+    friend void translateBranch(Cpu &cpu, Instr &instr, TranslationAttr &attr);
+    friend void translateLoad(  Cpu &cpu, Instr &instr, TranslationAttr &attr);
+    friend void translateStore( Cpu &cpu, Instr &instr, TranslationAttr &attr);
+    friend void translateAuipc( Cpu &cpu, Instr &instr, TranslationAttr &attr);
+    friend void translateJalr(  Cpu &cpu, Instr &instr, TranslationAttr &attr);
+    friend void translateJal(   Cpu &cpu, Instr &instr, TranslationAttr &attr);
+    friend void translateLui(   Cpu &cpu, Instr &instr, TranslationAttr &attr);
+    friend void translateFence( Cpu &cpu, Instr &instr, TranslationAttr &attr);
+    friend void translateEbreak(Cpu &cpu ,Instr &instr, TranslationAttr &attr);
+    friend void translateEcall( Cpu &cpu ,Instr &instr, TranslationAttr &attr);
 };
 
 struct Instr
@@ -155,11 +167,21 @@ struct Instr
     int rs2_id;
 
     size_t size;
-    // void (*exec)(Cpu &cpu, Instr &instr);
     std::function<void(Cpu &, Instr &)> exec;
+    std::function<void(Cpu &cpu, Instr &instr, TranslationAttr &attr)> translate;
 };
 
-    const std::vector<std::function<void(Cpu &, Instr &)>> executeImmFuncs =
+Instr decode(reg_t instr);
+void executeEbreak(Cpu &cpu,[[maybe_unused]] Instr &instr);
+void executeEcall(Cpu &cpu,[[maybe_unused]] Instr &instr);
+void executeLui(Cpu &cpu, Instr &instr);
+void executeAuipc(Cpu &cpu, Instr &instr);
+void executeJalr(Cpu &cpu, Instr &instr);
+void executeJal(Cpu &cpu, Instr &instr);
+void executeFence([[maybe_unused]] Cpu &cpu,[[maybe_unused]] Instr &instr);
+void interpret_block(Cpu &cpu, std::vector<Instr> &instrs);
+
+const std::vector<std::function<void(Cpu &, Instr &)>> executeImmFuncs =
     {
         // ADDI  = 0b0000
         [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) + instr.imm);},
@@ -251,43 +273,169 @@ const std::vector<std::function<void(Cpu &, Instr &)>> executeStoreFuncs =
         [] (Cpu &cpu, Instr &instr) {cpu.store<word_t>((addr_t)(instr.imm + cpu.getReg(instr.rs1_id)), cpu.getReg(instr.rs2_id));},
     };
 
-void executeEbreak(Cpu &cpu,[[maybe_unused]] Instr &instr);
-void executeEcall(Cpu &cpu,[[maybe_unused]] Instr &instr);
 const std::vector<std::function<void(Cpu &, Instr &)>> executeSystemFuncs =
     {
         executeEcall,
         executeEbreak,
     };
 
-Instr decode(reg_t instr);
-void executeImm (Cpu &cpu, Instr &instr);
-void executeOp (Cpu &cpu, Instr &instr);
-void executeBranch (Cpu &cpu, Instr &instr);
-void executeLoad (Cpu &cpu, Instr &instr);
-void executeStore (Cpu &cpu, Instr &instr);
-void executeSystem(Cpu &cpu, Instr &instr);
-void executeLui(Cpu &cpu, Instr &instr);
-void executeAuipc(Cpu &cpu, Instr &instr);
-void executeJalr(Cpu &cpu, Instr &instr);
-void executeJal(Cpu &cpu, Instr &instr);
-void executeFence(Cpu &cpu, Instr &instr);
-void execute(Cpu &cpu, Instr &instr);
-void interpret_block(Cpu &cpu, std::vector<Instr> &instrs);
 
-
-
-//translateion
+//translation
 const size_t BB_AVERAGE_SIZE = 10;
 const size_t BB_THRESHOLD = 10;
 bool is_bb_end(Instr &instr);
 
-// asmjit::x86::Mem toDwordPtr(Register &reg);
+Cpu::func_t translate(    Cpu &cpu, std::vector<Instr> &bb);
+void translateImm(   Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateOp(    Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateBranch(Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateLoad(  Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateStore( Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateAuipc( Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateJalr(  Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateJal(   Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateLui(   Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateFence( Cpu &cpu, Instr &instr, TranslationAttr &attr);
+// ssize_t ReadWrapper(Cpu *cpu, int fd, addr_t start_buf, size_t buf_size);
+// ssize_t WriteWrapper(Cpu *cpu, int fd, addr_t start_buf, size_t buf_size);
+void translateEbreak(Cpu &cpu ,Instr &instr, TranslationAttr &attr);
+void translateEcall( Cpu &cpu ,Instr &instr, TranslationAttr &attr);
 
-void translateOp(Instr &instr, TranslationAttr &attr)    ;
-void translateImm(Instr &instr, TranslationAttr &attr)   ;
-void translateBranch(Instr &instr, TranslationAttr &attr);
-void translateLoad (Instr &instr, TranslationAttr &attr) ;
-void translateStore(Instr &instr, TranslationAttr &attr) ;
+const std::vector<std::function<void(Instr &instr, TranslationAttr &attr)>> translateImmFuncs =
+    {
+        // ADDI  = 0b0000
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.add(attr.dst1, attr.dst2);},
+        // SLLI  = 0b0001
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.shl(attr.dst1, attr.dst2);},
+        // SLTI  = 0b0010
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.cmp(attr.dst1, attr.dst2);
+                attr.cc.setl(attr.dst1);},
+        // SLTIU = 0b0011
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.cmp(attr.dst1, attr.dst2);
+                attr.cc.setb(attr.dst1);},
+        // XORI  = 0b0100
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.xor_(attr.dst1, attr.dst2);},
+        // SRLI  = 0b0101
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.shr(attr.dst1, attr.dst2);},
+        // ORI   = 0b0110
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.or_(attr.dst1, attr.dst2);},
+        // ANDI  = 0b0111
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.and_(attr.dst1, attr.dst2);},
+        // SRAI  = 0b1000
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.sar(attr.dst1, attr.dst2);},
+    };
+
+const std::vector<std::function<void(Instr &instr, TranslationAttr &attr)>> translateOpFuncs =
+    {
+        // ADD  = 0b0000
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.add(attr.dst1, attr.dst2);},
+        // SLL  = 0b0001
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.shl(attr.dst1, attr.dst2);},
+        // SLT  = 0b0010
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.cmp(attr.dst1, attr.dst2);
+                attr.cc.setl(attr.dst1);},
+        // SLTU = 0b0011
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.cmp(attr.dst1, attr.dst2);
+                attr.cc.setb(attr.dst1);},
+        // XOR  = 0b0100
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.xor_(attr.dst1, attr.dst2);},
+        // SRL  = 0b0101
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.shr(attr.dst1, attr.dst2);},
+        // OR   = 0b0110
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.or_(attr.dst1, attr.dst2);},
+        // AND  = 0b0111
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.and_(attr.dst1, attr.dst2);},
+        // SUB  = 0b1000
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.sub(attr.dst1, attr.dst2);},
+        // SRA  = 0b1001
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.sar(attr.dst1, attr.dst2);},
+
+    };
+
+const std::vector<std::function<void(Instr &instr, TranslationAttr &attr)>> translateBranchFuncs =
+    {
+        // BEQ  = 0b000
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.je(*attr.L_BRANCH);},
+        // BNE  = 0b001
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.jne(*attr.L_BRANCH);},
+        // FILLER = 0b010
+        [] (Instr &instr, TranslationAttr &attr) {},
+        // FILLER = 0b011
+        [] (Instr &instr, TranslationAttr &attr) {},
+        // BLT  = 0b100
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.jl(*attr.L_BRANCH);},
+        // BGE  = 0b101
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.jg(*attr.L_BRANCH);},
+        // BLTU = 0b110
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.jb(*attr.L_BRANCH);},
+        // BGEU = 0b111
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.ja(*attr.L_BRANCH);},
+    };
+
+template<typename ValueT>
+reg_t LoadWrapper(Cpu *cpu, addr_t addr)
+{
+    return cpu->load<ValueT>(addr);
+}
+
+const std::vector<std::function<void(Instr &instr, TranslationAttr &attr)>> translateLoadFuncs =
+    {
+        // LB  = 0b000
+        [] (Instr &instr, TranslationAttr &attr) 
+        {
+            attr.cc.invoke(attr.invokeNode, (uint64_t)LoadWrapper<byte_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
+        },
+        // LH  = 0b001
+        [] (Instr &instr, TranslationAttr &attr) 
+        {
+            attr.cc.invoke(attr.invokeNode, (uint64_t)LoadWrapper<half_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
+        },
+        // LW  = 0b010
+        [] (Instr &instr, TranslationAttr &attr) 
+        {
+            attr.cc.invoke(attr.invokeNode, (uint64_t)LoadWrapper<word_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
+        },
+        // FILLER  = 0b011
+        [] (Instr &instr, TranslationAttr &attr) {},
+        // LBU = 0b100
+        [] (Instr &instr, TranslationAttr &attr) 
+        {
+            attr.cc.invoke(attr.invokeNode, (uint64_t)LoadWrapper<byte_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
+            attr.cc.mov(attr.dst2, 0x000000ff);
+        },
+        // LHU = 0b101
+        [] (Instr &instr, TranslationAttr &attr) 
+        {
+            attr.cc.invoke(attr.invokeNode, (uint64_t)LoadWrapper<half_t>, asmjit::FuncSignature::build<reg_t, Cpu *, addr_t>());
+            attr.cc.mov(attr.dst2, 0x0000ffff);
+        },
+    };
+
+template<typename StoreT>
+static void StoreWrapper(Cpu *cpu, addr_t addr, reg_t val)
+{
+    cpu->store<StoreT>(addr, val);
+}
+
+const std::vector<std::function<void(Instr &instr, TranslationAttr &attr)>> translateStoreFuncs =
+    {
+        // SB = 0b000
+        [] (Instr &instr, TranslationAttr &attr) 
+        {
+            attr.cc.invoke(attr.invokeNode, (uint64_t)StoreWrapper<byte_t>, asmjit::FuncSignature::build<void, Cpu *, addr_t, reg_t>());
+        },
+        // SH = 0b001
+        [] (Instr &instr, TranslationAttr &attr) 
+        {
+            attr.cc.invoke(attr.invokeNode, (uint64_t)StoreWrapper<half_t>, asmjit::FuncSignature::build<void, Cpu *, addr_t, reg_t>());
+        },
+        // SW = 0b010
+        [] (Instr &instr, TranslationAttr &attr) 
+        {
+            attr.cc.invoke(attr.invokeNode, (uint64_t)StoreWrapper<word_t>, asmjit::FuncSignature::build<void, Cpu *, addr_t, reg_t>());
+
+        },
+    };
 
 std::vector<Instr> lookup(Cpu &cpu, addr_t addr);
 // Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb);

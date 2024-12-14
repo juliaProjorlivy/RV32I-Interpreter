@@ -119,7 +119,7 @@ int run_simulation(Cpu &cpu)
             auto cache_block= cpu.bb_cache.find(cpu.getPc());
             if(cache_block->second.size() >= BB_THRESHOLD)
             {
-                auto func = cpu.translate(cache_block->second);
+                auto func = translate(cpu, cache_block->second);
                 if(func)
                 {
                     cpu.bb_translated.emplace(cpu.getPc(), func);

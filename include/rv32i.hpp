@@ -139,15 +139,12 @@ namespace Syscall
 {
     enum class rv
     {
-        LSEEK  = 62,
         READ   = 63,
         WRITE  = 64,
         CLOSE  = 57,
         EXIT   = 93,
-        MMAP   = 222,
     };
 }
 
 #endif
-
 
