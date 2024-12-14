@@ -3,9 +3,7 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <fstream>
 #include <iostream>
-#include <type_traits>
 #include <unordered_map>
 #include <vector>
 #include <functional>
@@ -98,21 +96,9 @@ public:
     std::unordered_map<addr_t, std::vector<struct Instr>> bb_cache {};
     typedef  void (*func_t)(void);
     std::unordered_map<addr_t, func_t> bb_translated {};
-    FILE *output_log;
 
-    Cpu (Memory *mem_, const char *trace_filename, addr_t entry = 0, const char *filename = "x86_64") : pc_(entry), next_pc_(entry), mem(mem_), tracer(trace_filename)
+    Cpu (Memory *mem_, const char *trace_filename = "trace.txt", addr_t entry = 0) : pc_(entry), next_pc_(entry), mem(mem_), tracer(trace_filename)
     {
-        output_log = fopen(filename, "w+");
-        if(!output_log) {std::cout << "Failed to open a file " << filename << std::endl;}
-        for(int i = 0; i < NRegs; i++)
-        {
-            regs.push_back(Register(i));
-        }
-    }
-    Cpu (Memory *mem_, addr_t entry = 0, const char *filename = "x86_64") : pc_(entry), next_pc_(entry), mem(mem_)
-    {
-        output_log = fopen(filename, "w+");
-        if(!output_log) {std::cout << "Failed to open a file " << filename << std::endl;}
         for(int i = 0; i < NRegs; i++)
         {
             regs.push_back(Register(i));

@@ -1,8 +1,6 @@
-#include "asmjit/core/compiler.h"
 #include "rv32i.hpp"
 #include "cpu.hpp"
 #include <cstddef>
-#include <cstdint>
 #include <cstdio>
 #include <functional>
 #include <sys/types.h>

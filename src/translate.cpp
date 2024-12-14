@@ -1,7 +1,6 @@
 #include "asmjit/core/codeholder.h"
 #include "asmjit/core/compiler.h"
 #include "asmjit/core/func.h"
-#include "asmjit/core/logger.h"
 #include "asmjit/x86/x86compiler.h"
 #include "asmjit/x86/x86operand.h"
 #include "cpu.hpp"
@@ -362,8 +361,8 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
     asmjit::x86::Compiler cc(&code);
     cc.addFunc(asmjit::FuncSignature::build<void>());
 
-    asmjit::FileLogger logger(cpu.output_log);
-    code.setLogger(&logger);
+    // asmjit::FileLogger logger{};
+    // code.setLogger(&logger);
 
     asmjit::x86::Gp dst1 = cc.newGpd();
     asmjit::x86::Gp dst2 = cc.newGpd();

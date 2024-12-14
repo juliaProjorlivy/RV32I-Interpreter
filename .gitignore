@@ -36,4 +36,5 @@ build1/*
 *.clangd
 *.hex
 x86_64*
-tracer.txt
+trace*.txt
+test*.txt

@@ -11,8 +11,16 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    const char *tracing = "trace.txt";
+    if(argc > 2)
+    {
+        tracing = argv[2];
+    }
+
     Memory mem{};
-    Cpu cpu(&mem, "tracer.txt");
+
+    Cpu cpu(&mem, tracing);
+
     if(elfio_manager(argv[1], cpu)) {return 1;}
 
     if(run_simulation(cpu)) {return 1;}
