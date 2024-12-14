@@ -71,6 +71,11 @@ public:
     {
         memcpy(data.data() + addr, &val, sizeof(Store_t));
     }
+
+    void store(addr_t addr, const void *buf, size_t buf_size)
+    {
+        memcpy(data.data() + addr, buf, buf_size);
+    }
 };
 
 class Cpu
@@ -126,6 +131,11 @@ public:
     void store(addr_t addr, addr_t val)
     {
         mem->store<Store_t>(addr, val);
+    }
+
+    void store(addr_t addr, const void *buf, size_t buf_size)
+    {
+        mem->store(addr, buf, buf_size);
     }
 
     void dump(std::ostream &os)

@@ -5,14 +5,6 @@
 #include <elfio/elfio_segment.hpp>
 #include <vector>
 
-void write_to_mem(Cpu &cpu, int Ninstr, const char *data_ptr, addr_t entry)
-{
-    for (int j = 0; j < Ninstr; ++j)
-    {
-        cpu.store<addr_t>(entry + j * sizeof(addr_t), *(reinterpret_cast<const reg_t *>(data_ptr + j * sizeof(reg_t))));
-    }
-}
-
 int elfio_manager(const char *filename, Cpu &cpu)
 {
     ELFIO::elfio reader;
@@ -33,27 +25,19 @@ int elfio_manager(const char *filename, Cpu &cpu)
     }
 
     ELFIO::Elf_Half seg_num = reader.segments.size();
+    //virtual main address
     ELFIO::Elf64_Addr entry_point = reader.get_entry();
-
-    addr_t seg_offset = reader.get_segments_offset();
-    addr_t seg_header_size = reader.get_segment_entry_size();
-    addr_t code_start_offset = seg_offset + seg_num * seg_header_size;
-
-    int Ninstr = 0;
 
     for(int i = 0; i < seg_num; i++)
     {
         const ELFIO::segment *seg = reader.segments[i];
         if(seg->get_type() == ELFIO::PT_LOAD && seg->get_flags() == (ELFIO::PF_X | ELFIO::PF_R))
         {
-            Ninstr = (seg->get_file_size() - code_start_offset) / sizeof(addr_t);
-            addr_t main_entry_offset = entry_point - seg->get_virtual_address() - code_start_offset;
-            //TODO: LOAD ALL
-            const char *start = seg->get_data() + code_start_offset;
+            const char *start = seg->get_data();
 
-            cpu.setPc(main_entry_offset);
+            cpu.setPc(entry_point - seg->get_virtual_address());
 
-            write_to_mem(cpu, Ninstr, start);
+            cpu.store(0, (const void *)start, seg->get_file_size());
         }
     }
 
@@ -140,5 +124,4 @@ int run_simulation(Cpu &cpu)
 
     return 0;
 }
-
 
