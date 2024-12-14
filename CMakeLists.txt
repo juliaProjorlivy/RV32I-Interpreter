@@ -4,6 +4,12 @@ project(RV32I)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(TRACING "" OFF)
+if(TRACING)
+    add_compile_definitions(TRACING)
+    message(STATUS "Building with trace...")
+endif()
+
 find_package(elfio REQUIRED)
 find_package(asmjit REQUIRED)
 # target_include_directories(elfio::elfio PUBLIC ${ELFIO_INCLUDE_DIRS})

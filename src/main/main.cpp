@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
     }
 
     Memory mem{};
-    Cpu cpu(&mem);
+    Cpu cpu(&mem, "tracer.txt");
     if(elfio_manager(argv[1], cpu)) {return 1;}
 
     if(run_simulation(cpu)) {return 1;}

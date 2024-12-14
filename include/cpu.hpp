@@ -88,10 +88,11 @@ private:
     Memory *mem;
     bool done {false};
 
-    //for tracing
-    // Trace tracer;
 
 public:
+    //for tracing
+    Trace tracer;
+
     //for binary translation
     asmjit::JitRuntime rt;
     std::unordered_map<addr_t, std::vector<struct Instr>> bb_cache {};
@@ -99,6 +100,15 @@ public:
     std::unordered_map<addr_t, func_t> bb_translated {};
     FILE *output_log;
 
+    Cpu (Memory *mem_, const char *trace_filename, addr_t entry = 0, const char *filename = "x86_64") : pc_(entry), next_pc_(entry), mem(mem_), tracer(trace_filename)
+    {
+        output_log = fopen(filename, "w+");
+        if(!output_log) {std::cout << "Failed to open a file " << filename << std::endl;}
+        for(int i = 0; i < NRegs; i++)
+        {
+            regs.push_back(Register(i));
+        }
+    }
     Cpu (Memory *mem_, addr_t entry = 0, const char *filename = "x86_64") : pc_(entry), next_pc_(entry), mem(mem_)
     {
         output_log = fopen(filename, "w+");
@@ -114,23 +124,42 @@ public:
     void advanceNextPc(std::size_t step = RV32I_INTR_SIZE) {next_pc_+= step;}
     reg_t getPc() const noexcept {return pc_;}
     reg_t getNextPc() const noexcept {return next_pc_;}
-    void setPc(reg_t val) noexcept {pc_ = val; next_pc_ = val;}
+    void setPc(reg_t val) noexcept
+    {
+        pc_ = val; next_pc_ = val;
+        #ifdef TRACING
+        tracer.PcChange(val);
+        #endif
+    }
     void setNextPc(reg_t val) noexcept {next_pc_ = val;}
 
-    void setReg(int ireg, reg_t value) {regs[ireg].setVal(value);}
+    void setReg(int ireg, reg_t value)
+    {
+        regs[ireg].setVal(value);
+        #ifdef TRACING
+        tracer.RegisterChange(ireg, value);
+        #endif
+    }
     reg_t getReg(int ireg) const {return regs[ireg].getVal();}
     void setDone(bool val = true) noexcept {done = val;}
 
     template<typename Value_t>
-    reg_t load(addr_t addr) const
+    reg_t load(addr_t addr)
     {
-        return mem->load<Value_t>(addr);
+        reg_t loaded = mem->load<Value_t>(addr);
+        #ifdef TRACING
+        tracer.MemoryRead(addr, loaded);
+        #endif
+        return loaded;
     }
 
     template<typename Store_t>
     void store(addr_t addr, addr_t val)
     {
         mem->store<Store_t>(addr, val);
+        #ifdef TRACING
+        tracer.MemoryWrite(addr, val);
+        #endif
     }
 
     void store(addr_t addr, const void *buf, size_t buf_size)
@@ -296,69 +325,67 @@ const size_t BB_THRESHOLD = 10;
 bool is_bb_end(Instr &instr);
 
 Cpu::func_t translate(    Cpu &cpu, std::vector<Instr> &bb);
-void translateImm(   Cpu &cpu, Instr &instr, TranslationAttr &attr);
-void translateOp(    Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateImm   (Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateOp    (Cpu &cpu, Instr &instr, TranslationAttr &attr);
 void translateBranch(Cpu &cpu, Instr &instr, TranslationAttr &attr);
-void translateLoad(  Cpu &cpu, Instr &instr, TranslationAttr &attr);
-void translateStore( Cpu &cpu, Instr &instr, TranslationAttr &attr);
-void translateAuipc( Cpu &cpu, Instr &instr, TranslationAttr &attr);
-void translateJalr(  Cpu &cpu, Instr &instr, TranslationAttr &attr);
-void translateJal(   Cpu &cpu, Instr &instr, TranslationAttr &attr);
-void translateLui(   Cpu &cpu, Instr &instr, TranslationAttr &attr);
-void translateFence( Cpu &cpu, Instr &instr, TranslationAttr &attr);
-// ssize_t ReadWrapper(Cpu *cpu, int fd, addr_t start_buf, size_t buf_size);
-// ssize_t WriteWrapper(Cpu *cpu, int fd, addr_t start_buf, size_t buf_size);
+void translateLoad  (Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateStore (Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateAuipc (Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateJalr  (Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateJal   (Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateLui   (Cpu &cpu, Instr &instr, TranslationAttr &attr);
+void translateFence (Cpu &cpu, Instr &instr, TranslationAttr &attr);
 void translateEbreak(Cpu &cpu ,Instr &instr, TranslationAttr &attr);
-void translateEcall( Cpu &cpu ,Instr &instr, TranslationAttr &attr);
+void translateEcall (Cpu &cpu ,Instr &instr, TranslationAttr &attr);
 
 const std::vector<std::function<void(Instr &instr, TranslationAttr &attr)>> translateImmFuncs =
     {
         // ADDI  = 0b0000
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.add(attr.dst1, attr.dst2);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.add(attr.ret, attr.dst2);},
         // SLLI  = 0b0001
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.shl(attr.dst1, attr.dst2);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.shl(attr.ret, attr.dst2);},
         // SLTI  = 0b0010
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.cmp(attr.dst1, attr.dst2);
-                attr.cc.setl(attr.dst1);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.cmp(attr.ret, attr.dst2);
+                attr.cc.setl(attr.ret);},
         // SLTIU = 0b0011
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.cmp(attr.dst1, attr.dst2);
-                attr.cc.setb(attr.dst1);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.cmp(attr.ret, attr.dst2);
+                attr.cc.setb(attr.ret);},
         // XORI  = 0b0100
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.xor_(attr.dst1, attr.dst2);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.xor_(attr.ret, attr.dst2);},
         // SRLI  = 0b0101
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.shr(attr.dst1, attr.dst2);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.shr(attr.ret, attr.dst2);},
         // ORI   = 0b0110
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.or_(attr.dst1, attr.dst2);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.or_(attr.ret, attr.dst2);},
         // ANDI  = 0b0111
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.and_(attr.dst1, attr.dst2);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.and_(attr.ret, attr.dst2);},
         // SRAI  = 0b1000
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.sar(attr.dst1, attr.dst2);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.sar(attr.ret, attr.dst2);},
     };
 
 const std::vector<std::function<void(Instr &instr, TranslationAttr &attr)>> translateOpFuncs =
     {
         // ADD  = 0b0000
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.add(attr.dst1, attr.dst2);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.add(attr.ret, attr.dst2);},
         // SLL  = 0b0001
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.shl(attr.dst1, attr.dst2);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.shl(attr.ret, attr.dst2);},
         // SLT  = 0b0010
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.cmp(attr.dst1, attr.dst2);
-                attr.cc.setl(attr.dst1);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.cmp(attr.ret, attr.dst2);
+                attr.cc.setl(attr.ret);},
         // SLTU = 0b0011
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.cmp(attr.dst1, attr.dst2);
-                attr.cc.setb(attr.dst1);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.cmp(attr.ret, attr.dst2);
+                attr.cc.setb(attr.ret);},
         // XOR  = 0b0100
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.xor_(attr.dst1, attr.dst2);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.xor_(attr.ret, attr.dst2);},
         // SRL  = 0b0101
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.shr(attr.dst1, attr.dst2);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.shr(attr.ret, attr.dst2);},
         // OR   = 0b0110
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.or_(attr.dst1, attr.dst2);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.or_(attr.ret, attr.dst2);},
         // AND  = 0b0111
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.and_(attr.dst1, attr.dst2);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.and_(attr.ret, attr.dst2);},
         // SUB  = 0b1000
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.sub(attr.dst1, attr.dst2);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.sub(attr.ret, attr.dst2);},
         // SRA  = 0b1001
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.sar(attr.dst1, attr.dst2);},
+        [] (Instr &instr, TranslationAttr &attr) {attr.cc.sar(attr.ret, attr.dst2);},
 
     };
 
@@ -448,7 +475,6 @@ const std::vector<std::function<void(Instr &instr, TranslationAttr &attr)>> tran
     };
 
 std::vector<Instr> lookup(Cpu &cpu, addr_t addr);
-// Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb);
 
 #endif
 

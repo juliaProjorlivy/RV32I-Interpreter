@@ -71,6 +71,9 @@ void executeEbreak(Cpu &cpu,[[maybe_unused]] Instr &instr) {cpu.setDone();}
 
 void executeEcall(Cpu &cpu,[[maybe_unused]] Instr &instr)
 {
+    #ifdef TRACING
+    cpu.tracer.Interrupt(cpu.getReg(17));
+    #endif
     switch (static_cast<Syscall::rv>(cpu.getReg(17)))
     {
         case Syscall::rv::READ:

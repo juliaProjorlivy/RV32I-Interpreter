@@ -9,24 +9,77 @@
 #include <cstdint>
 #include <unistd.h>
 
+static void TraceMWWrapper(Cpu *cpu, addr_t addr, reg_t val)
+{
+    cpu->tracer.MemoryWrite(addr, val);
+}
+
+static void TraceMRWrapper(Cpu *cpu, addr_t addr, reg_t val)
+{
+    cpu->tracer.MemoryRead(addr, val);
+}
+
+static void TraceRCWrapper(Cpu *cpu, int ireg, reg_t val)
+{
+    cpu->tracer.RegisterChange(ireg, val);
+}
+
+static void TracePcCWrapper(Cpu *cpu, reg_t val)
+{
+    cpu->tracer.PcChange(val);
+}
+
+static void TraceInterruptWrapper(Cpu *cpu, int inumber)
+{
+    cpu->tracer.Interrupt(inumber);
+}
+
+static void TraceRC(Cpu &cpu, Instr &instr, TranslationAttr &attr)
+{
+    attr.cc.mov(attr.dst2, instr.rd_id);
+    asmjit::InvokeNode *invokeNode{};
+    attr.cc.invoke(&invokeNode, (uint64_t)TraceRCWrapper, asmjit::FuncSignature::build<void, Cpu *, int, reg_t>());
+
+    invokeNode->setArg(0, &cpu);
+    invokeNode->setArg(1, attr.dst2);
+    invokeNode->setArg(2, attr.ret);
+}
+
+static void TracePcC(Cpu &cpu, TranslationAttr &attr)
+{
+    asmjit::InvokeNode *invokeNode{};
+    attr.cc.invoke(&invokeNode, (uint64_t)TracePcCWrapper, asmjit::FuncSignature::build<void, Cpu *, reg_t>());
+
+    invokeNode->setArg(0, &cpu);
+    invokeNode->setArg(1, attr.dst1);
+}
+
 void translateImm(Cpu &cpu, Instr &instr, TranslationAttr &attr)
 {
     if(instr.rd_id != 0)
     {
-        attr.cc.mov(attr.dst1, cpu.regs[instr.rs1_id].toDwordPtr());
+        attr.cc.mov(attr.ret, cpu.regs[instr.rs1_id].toDwordPtr());
         attr.cc.mov(attr.dst2, instr.imm);
         translateImmFuncs[instr.funct3](instr, attr);
-        attr.cc.mov((cpu.regs[instr.rd_id].toDwordPtr()), attr.dst1);
+        attr.cc.mov((cpu.regs[instr.rd_id].toDwordPtr()), attr.ret);
+
+        #ifdef TRACING
+        TraceRC(cpu, instr, attr);
+        #endif
     }
 }
 void translateOp(Cpu &cpu, Instr &instr, TranslationAttr &attr)
 {
     if(instr.rd_id != 0)
     {
-        attr.cc.mov(attr.dst1, cpu.regs[instr.rs1_id].toDwordPtr());
+        attr.cc.mov(attr.ret, cpu.regs[instr.rs1_id].toDwordPtr());
         attr.cc.mov(attr.dst2, cpu.regs[instr.rs2_id].toDwordPtr());
         translateOpFuncs[instr.funct3](instr, attr);
-        attr.cc.mov(cpu.regs[instr.rd_id].toDwordPtr(), attr.dst1);
+        attr.cc.mov(cpu.regs[instr.rd_id].toDwordPtr(), attr.ret);
+
+        #ifdef TRACING
+        TraceRC(cpu, instr, attr);
+        #endif
     }
 }
 
@@ -50,6 +103,16 @@ void translateLoad(Cpu &cpu, Instr &instr, TranslationAttr &attr)
             attr.cc.and_(attr.ret, attr.dst2);
         }
         attr.cc.mov(cpu.regs[instr.rd_id].toDwordPtr(), attr.ret);
+
+        #ifdef TRACING
+        asmjit::InvokeNode *invokeNodeTrace {};
+        attr.cc.invoke(&invokeNodeTrace, (uint64_t)TraceMRWrapper, asmjit::FuncSignature::build<void, Cpu *, addr_t, reg_t>());
+        invokeNodeTrace->setArg(0, &cpu);
+        invokeNodeTrace->setArg(1, attr.dst1);
+        invokeNodeTrace->setArg(2, attr.ret);
+
+        TraceRC(cpu, instr, attr);
+        #endif
     }
 }
 
@@ -66,6 +129,16 @@ void translateStore(Cpu &cpu, Instr &instr, TranslationAttr &attr)
     invokeNode->setArg(0, &cpu);
     invokeNode->setArg(1,attr.dst1);
     invokeNode->setArg(2,attr.dst2);
+
+    #ifdef TRACING
+    asmjit::InvokeNode *invokeNodeTrace {};
+    attr.cc.invoke(&invokeNodeTrace, (uint64_t)TraceMWWrapper, asmjit::FuncSignature::build<void, Cpu *, addr_t, reg_t>());
+    invokeNodeTrace->setArg(0, &cpu);
+    invokeNodeTrace->setArg(1, attr.dst1);
+    invokeNodeTrace->setArg(2, attr.dst2);
+
+    TraceRC(cpu, instr, attr);
+    #endif
 }
 
 void translateBranch(Cpu &cpu, Instr &instr, TranslationAttr &attr)
@@ -87,19 +160,26 @@ void translateBranch(Cpu &cpu, Instr &instr, TranslationAttr &attr)
 
     attr.cc.bind(L_END);
     attr.cc.mov(attr.dst2, cpu.getPc());
-    attr.cc.add(attr.dst2, attr.dst1);
-    attr.cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))), attr.dst2);
-    // attr.cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.next_pc_))), attr.dst2);
+    attr.cc.add(attr.dst1, attr.dst2);
+    attr.cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))), attr.dst1);
+
+    #ifdef TRACING
+    TracePcC(cpu, attr);
+    #endif
 }
 
 void translateJalr(Cpu &cpu, Instr &instr, TranslationAttr &attr)
 {
     if(instr.rd_id != 0)
     {
-        attr.cc.mov(attr.dst2, cpu.getPc());
+        attr.cc.mov(attr.ret, cpu.getPc());
         attr.cc.mov(attr.dst1, instr.size);
-        attr.cc.add(attr.dst2, attr.dst1);
-        attr.cc.mov(cpu.regs[instr.rd_id].toDwordPtr(), attr.dst2);
+        attr.cc.add(attr.ret, attr.dst1);
+        attr.cc.mov(cpu.regs[instr.rd_id].toDwordPtr(), attr.ret);
+
+        #ifdef TRACING
+        TraceRC(cpu, instr, attr);
+        #endif
     }
 
     attr.cc.mov(attr.dst1, cpu.regs[instr.rs1_id].toDwordPtr());
@@ -109,37 +189,54 @@ void translateJalr(Cpu &cpu, Instr &instr, TranslationAttr &attr)
     attr.cc.and_(attr.dst1, attr.dst2);
 
     attr.cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))),attr.dst1);
-    // attr.cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.next_pc_))), attr.dst1);
+    #ifdef TRACING
+    TracePcC(cpu, attr);
+    #endif
 }
 
 void translateJal(Cpu &cpu, Instr &instr, TranslationAttr &attr)
 {
     if(instr.rd_id != 0)
     {
-        attr.cc.mov(attr.dst1, cpu.getPc() + instr.size);
-        attr.cc.mov(cpu.regs[instr.rd_id].toDwordPtr(), attr.dst1);
+        attr.cc.mov(attr.ret, cpu.getPc() + instr.size);
+        attr.cc.mov(cpu.regs[instr.rd_id].toDwordPtr(), attr.ret);
+        #ifdef TRACING
+        TraceRC(cpu, instr, attr);
+        #endif
     }
 
     attr.cc.mov(attr.dst1, cpu.getPc() + instr.imm);
     attr.cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))), attr.dst1);
-    // attr.cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.next_pc_))), attr.dst1);
+    #ifdef TRACING
+    TracePcC(cpu, attr);
+    #endif
 }
 
 void translateLui(Cpu &cpu, Instr &instr, TranslationAttr &attr)
 {
     if(instr.rd_id != 0)
     {
-        attr.cc.mov(attr.dst1, (instr.imm << 12));
-        attr.cc.mov(cpu.regs[instr.rd_id].toDwordPtr(), attr.dst1);
+        attr.cc.mov(attr.ret, (instr.imm << 12));
+        attr.cc.mov(cpu.regs[instr.rd_id].toDwordPtr(), attr.ret);
+        #ifdef TRACING
+        TraceRC(cpu, instr, attr);
+        #endif
     }
 }
 
 void translateAuipc(Cpu &cpu, Instr &instr, TranslationAttr &attr)
 {
-    addr_t new_pc = cpu.getPc() + (instr.imm << 12);
+    if(instr.rd_id != 0)
+    {
+        addr_t new_pc = cpu.getPc() + (instr.imm << 12);
 
-    attr.cc.mov(attr.dst1, new_pc);
-    attr.cc.mov(cpu.regs[instr.rd_id].toDwordPtr(), attr.dst1);
+        attr.cc.mov(attr.ret, new_pc);
+        attr.cc.mov(cpu.regs[instr.rd_id].toDwordPtr(), attr.ret);
+
+        #ifdef TRACING
+        TraceRC(cpu, instr, attr);
+        #endif
+    }
 }
 
 static ssize_t ReadWrapper(Cpu *cpu, int fd, addr_t start_buf, size_t buf_size)
@@ -174,6 +271,13 @@ void translateEcall(Cpu &cpu ,Instr &instr, TranslationAttr &attr)
     asmjit::Label L_EXIT = attr.cc.newLabel();
     asmjit::x86::Gp dst3 = attr.cc.newGpd();
     attr.cc.mov(attr.dst1, cpu.regs[17].toDwordPtr());
+
+    #ifdef TRACING
+    asmjit::InvokeNode *invokeNodeTrace {};
+    attr.cc.invoke(&invokeNodeTrace, (uint64_t)TraceInterruptWrapper, asmjit::FuncSignature::build<ssize_t, Cpu *, int>());
+    invokeNodeTrace->setArg(0, &cpu);
+    invokeNodeTrace->setArg(1, attr.dst1);
+    #endif
 
     attr.cc.mov(attr.dst2, Syscall::rv::READ);
     attr.cc.cmp(attr.dst1, attr.dst2);
@@ -227,6 +331,10 @@ void translateEcall(Cpu &cpu ,Instr &instr, TranslationAttr &attr)
 
     attr.cc.bind(L_END);
     attr.cc.mov(cpu.regs[1].toDwordPtr(), attr.ret);
+
+    #ifdef TRACING
+    TraceRC(cpu, instr, attr);
+    #endif
 }
 
 void translateEbreak(Cpu &cpu ,Instr &instr, TranslationAttr &attr)
@@ -235,7 +343,10 @@ void translateEbreak(Cpu &cpu ,Instr &instr, TranslationAttr &attr)
     attr.cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.done))), attr.dst1);
     attr.cc.mov(attr.dst1, cpu.getPc() + instr.size);
     attr.cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.pc_))), attr.dst1);
-    attr.cc.mov(asmjit::x86::dword_ptr((uint64_t)(&(cpu.next_pc_))), attr.dst1);
+
+    #ifdef TRACING
+    TracePcC(cpu, attr);
+    #endif
 }
 
 void translateFence([[maybe_unused]] Cpu &cpu, [[maybe_unused]] Instr &instr, TranslationAttr &attr)
@@ -276,6 +387,7 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
             instr->translate(cpu, *instr, attr);
         }
     }
+
     //Last branch/jal/jalr instruction
     addr_t cur_pc = cpu.getPc();
     cpu.advancePc((bb.size() - 1) * RV32I_INTR_SIZE);
