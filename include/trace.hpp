@@ -12,22 +12,25 @@ public:
 
     void MemoryWrite(addr_t addr, reg_t val)
     {
-        trace_out_file << "Write to addr=0x" << std::setw(8) << std::setfill('0') << std::hex << addr << " val=" << std::dec << val << std::endl;
+        trace_out_file << "[0x" << std::setw(8) << std::setfill('0') << std::hex << addr << "] <== <" << std::dec << val << ">" << std::endl;
+        trace_out_file << "mem change (store)" << std::endl;
     }
     void MemoryRead(addr_t addr, reg_t val)
     {
-        trace_out_file << "Read from addr=0x" << std::setw(8) << std::setfill('0') << std::hex << addr << " val=" << std::dec << val << std::endl;
+        trace_out_file << "[0x" << std::setw(8) << std::setfill('0') << std::hex << addr << "] ==> <" << std::dec << val << ">" << std::endl;
+        trace_out_file << "mem load" << std::endl;
     }
     void RegisterChange(int reg_id, reg_t val)
     {
-        trace_out_file << "Write to x" << std::dec << reg_id << "=" << std::dec << val << std::endl;
+        trace_out_file << "x" << std::dec << reg_id << " <== <" << std::dec << val << ">" <<  std::endl;
+        trace_out_file << "reg write"<< std::endl;
     }
     void PcChange(reg_t val)
     {
-        trace_out_file << "Change pc=0x" << std::setw(8) << std::setfill('0') << std::hex << val << std::endl;
+        trace_out_file << "pc=0x" << std::setw(8) << std::setfill('0') << std::hex << val << std::endl;
     }
     void Interrupt(int interrupt_number)
     {
-        trace_out_file << "Interrupt number=" << std::dec << interrupt_number << std::endl;
+        trace_out_file << "interrupt " << std::dec << interrupt_number << std::endl;
     }
 };
