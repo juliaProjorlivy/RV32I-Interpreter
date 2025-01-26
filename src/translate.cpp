@@ -6,6 +6,7 @@
 #include "cpu.hpp"
 #include "rv32i.hpp"
 #include <cstdint>
+#include <iostream>
 #include <unistd.h>
 
 static void TraceMWWrapper(Cpu *cpu, addr_t addr, reg_t val)

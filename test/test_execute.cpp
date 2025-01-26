@@ -1,4 +1,5 @@
 #include "test.hpp"
+#include <climits>
 
 TEST_F(RV32I_Test, TEST_EXECUTE_ADDI)
 {
@@ -128,5 +129,29 @@ TEST_F(RV32I_Test, TEST_EXECUTE_LOAD_STORE)
     instr_load.exec(*cpu, instr_load);
     EXPECT_EQ(cpu->getReg(3), -77);
     EXPECT_EQ(cpu->getReg(4), 0);
+}
+
+TEST_F(RV32I_Test, TEST_EXECUTE_MUL)
+{
+    cpu->setReg(3, 0);
+    cpu->setReg(4,1);
+    cpu->setReg(5,5);
+    Instr instr = decode(INSTR_TO_TEST::mul_x3_x4_x5);
+    instr.exec(*cpu, instr);
+    EXPECT_EQ(cpu->getReg(3), 5);
+    EXPECT_EQ(cpu->getReg(4), 1);
+    EXPECT_EQ(cpu->getReg(5), 5);
+}
+
+TEST_F(RV32I_Test, TEST_EXECUTE_MULH)
+{
+    cpu->setReg(3, 0);
+    cpu->setReg(4,2);
+    cpu->setReg(5,INT_MAX);
+    Instr instr = decode(INSTR_TO_TEST::mulh_x3_x4_x5);
+    instr.exec(*cpu, instr);
+    EXPECT_EQ(cpu->getReg(3), 0xffffffff);
+    EXPECT_EQ(cpu->getReg(4), 2);
+    EXPECT_EQ(cpu->getReg(5), INT_MAX);
 }
 

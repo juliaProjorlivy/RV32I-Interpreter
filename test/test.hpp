@@ -21,6 +21,15 @@ struct RV32I_Test : public testing::Test
         lw_x3_x4_32   = 0x02022183,
         lui_x3_32     = 0x000201b7,
         auipc_x3_32   = 0x00020197,
+
+        mul_x3_x4_x5    = 0x025201b3,
+        mulh_x3_x4_x5   = 0x025211b3,
+        mulhu_x3_x4_x5  = 0x025231b3,
+        mulhsu_x3_x4_x5 = 0x025221b3,
+        div_x3_x4_x5    = 0x025241b3,
+        divu_x3_x4_x5   = 0x025251b3,
+        rem_x3_x4_x5    = 0x025261b3,
+        remu_x3_x4_x5   = 0x025271b3,
     };
 
     void SetUp() {mem = new Memory; cpu = new Cpu{mem};};

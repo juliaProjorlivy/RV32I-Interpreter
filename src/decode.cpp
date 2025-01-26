@@ -2,8 +2,6 @@
 #include "cpu.hpp"
 #include <cstdint>
 
-
-//TODO: DECODE FULLY (FUNC)
 Instr decode(reg_t instr_)
 {
     Instr instr{};
@@ -28,7 +26,7 @@ Instr decode(reg_t instr_)
             {
                 instr.funct3 = getfunct3(instr_);
                 instr.funct7 = getfunct7(instr_);
-                if(instr.funct7)
+                if(instr.funct7 == R::Op::funct7::I_EX_NEW)
                 {
                     if(static_cast<R::Op::funct3>(instr.funct3) == R::Op::funct3::ADD)
                     {
@@ -38,11 +36,12 @@ Instr decode(reg_t instr_)
                     {
                         instr.funct3 = static_cast<uint8_t>(R::Op::funct3::SRA);
                     }
+                    instr.funct7 = R::Op::funct7::I_EX_MAIN;
                 }
                 instr.rd_id  = getRdId(instr_);
                 instr.rs1_id = getRs1Id(instr_);
                 instr.rs2_id = getRs2Id(instr_);
-                instr.exec   = executeOpFuncs[instr.funct3];
+                instr.exec   = executeOpFuncs[instr.funct7][instr.funct3];
                 instr.translate = translateOp;
                 break;
             }
@@ -152,7 +151,7 @@ uint8_t getfunct3(reg_t instr)
 
 uint8_t getfunct7(reg_t instr)
 {
-    return ((instr >> 30) & 1);
+    return ((instr >> 25));
 }
 
 int getRdId(reg_t instr)

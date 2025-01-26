@@ -1,19 +1,7 @@
 #ifndef RV32I_HPP
 #define RV32I_HPP
 
-#include <cstdint>
-
-const std::uint8_t regsize = 0b11111;
-
-using addr_t = uint32_t ;
-using mem_t  = uint8_t  ;
-using reg_t  = int32_t  ;
-using imm_t  = int32_t  ;
-using byte_t = int8_t   ;
-using half_t = int16_t  ;
-using word_t = int32_t  ;
-using instr_t = uint32_t;
-const std::size_t RV32I_INTR_SIZE = 4;
+#include "rv32.hpp"
 
 enum class Opcode : std::uint8_t
 {
@@ -86,7 +74,15 @@ namespace R
         AND  = 0b0111,
         SUB  = 0b1000,
         SRA  = 0b1001,
-    };}
+    };
+    enum funct7 : uint8_t
+    {
+        //EXTENSIONS
+        I_EX_MAIN = 0b0000000,
+        I_EX_NEW = 0b0100000,
+        M_EX = 0b0000001,
+    };
+    }
 };
 
 namespace B

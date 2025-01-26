@@ -1,17 +1,15 @@
 #ifndef CPU_RV_HPP
 #define CPU_RV_HPP
 
-#include <cstddef>
-#include <cstdint>
-#include <iostream>
-#include <unordered_map>
-#include <vector>
 #include <functional>
+#include <limits.h>
 
 #include "asmjit/core/compiler.h"
 #include "asmjit/core/jitruntime.h"
 #include "asmjit/x86/x86compiler.h"
+#include "rv32.hpp"
 #include "rv32i.hpp"
+#include "rv32m.hpp"
 #include "trace.hpp"
 
 struct Register
@@ -228,7 +226,8 @@ const std::vector<std::function<void(Cpu &, Instr &)>> executeImmFuncs =
         [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, static_cast<std::uint32_t>(cpu.getReg(instr.rs1_id)) >> instr.imm);},
     };
 
-const std::vector<std::function<void(Cpu &, Instr &)>> executeOpFuncs =
+const std::vector<std::vector<std::function<void(Cpu &, Instr &)>>> executeOpFuncs =
+    {
     {
         // ADD  = 0b0000,
         [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) + cpu.getReg(instr.rs2_id));},
@@ -250,7 +249,98 @@ const std::vector<std::function<void(Cpu &, Instr &)>> executeOpFuncs =
         [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) - cpu.getReg(instr.rs2_id));},
         // SRA  = 0b1001,
         [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) >> cpu.getReg(instr.rs2_id));},
-    };
+    },
+{
+        //MUL
+        [] (Cpu &cpu, Instr &instr) {long int product = cpu.getReg(instr.rs1_id) * cpu.getReg(instr.rs2_id); cpu.setReg(instr.rd_id, (product) & 0xffffffff);},
+        //MULH
+        [] (Cpu &cpu, Instr &instr) {long int product = cpu.getReg(instr.rs1_id) * cpu.getReg(instr.rs2_id); cpu.setReg(instr.rd_id, (product) >> 32);},
+        //MULHSU
+        [] (Cpu &cpu, Instr &instr) {long int product = cpu.getReg(instr.rs1_id) * static_cast<uint32_t>(cpu.getReg(instr.rs2_id)); cpu.setReg(instr.rd_id, (product) >> 32);},
+        //MULHU
+        [] (Cpu &cpu, Instr &instr) {long unsigned int product = static_cast<uint32_t>(cpu.getReg(instr.rs1_id)) * static_cast<uint32_t>(cpu.getReg(instr.rs2_id)); cpu.setReg(instr.rd_id, (product) >> 32);},
+        //DIV
+        [] (Cpu &cpu, Instr &instr) 
+            {
+                if(cpu.getReg(instr.rs2_id) == 0)
+                {
+                    cpu.setReg(instr.rd_id, 0xffffffff);
+                }
+                else if(cpu.getReg(instr.rs1_id) == INT_MIN && cpu.getReg(instr.rs2_id) == -1)
+                {
+                    cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id));
+                }
+                else
+                {
+                    cpu.setReg(instr.rd_id, static_cast<reg_t>(cpu.getReg(instr.rs1_id) / cpu.getReg(instr.rs2_id)));
+                }
+            },
+        //DIVU
+        [] (Cpu &cpu, Instr &instr) 
+            {
+                if(cpu.getReg(instr.rs2_id) == 0)
+                {
+                    cpu.setReg(instr.rd_id, 0xffffffff);
+                }
+                else
+                {
+                    cpu.setReg(instr.rd_id, static_cast<reg_t>(static_cast<uint32_t>(cpu.getReg(instr.rs1_id)) / static_cast<uint32_t>(cpu.getReg(instr.rs2_id))));
+                }
+            },
+        //REM
+        [] (Cpu &cpu, Instr &instr) 
+            {
+                if(cpu.getReg(instr.rs2_id) == 0)
+                {
+                    cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id));
+                }
+                else if(cpu.getReg(instr.rs1_id) == INT_MIN && cpu.getReg(instr.rs2_id) == -1)
+                {
+                    cpu.setReg(instr.rd_id, 0);
+                }
+                else
+                {
+                    cpu.setReg(instr.rd_id, static_cast<reg_t>(cpu.getReg(instr.rs1_id) % cpu.getReg(instr.rs2_id)));
+                }
+            },
+        //REMU
+        [] (Cpu &cpu, Instr &instr) 
+            {
+                if(cpu.getReg(instr.rs2_id) == 0)
+                {
+                    cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id));
+                }
+                else
+                {
+                    cpu.setReg(instr.rd_id, static_cast<reg_t>(cpu.getReg(instr.rs1_id) % cpu.getReg(instr.rs2_id)));
+                }
+            },
+    }
+};
+
+// const std::vector<std::function<void(Cpu &, Instr &)>> executeOpFuncs =
+//     {
+//         // ADD  = 0b0000,
+//         [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) + cpu.getReg(instr.rs2_id));},
+//         // SLL  = 0b0001,
+//         [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) << (cpu.getReg(instr.rs2_id) & 0b11111));},
+//         // SLT  = 0b0010,
+//         [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) < cpu.getReg(instr.rs2_id));},
+//         // SLTU = 0b0011,
+//         [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, static_cast<uint32_t>(cpu.getReg(instr.rs1_id)) < static_cast<uint32_t>(cpu.getReg(instr.rs2_id)));},
+//         // XOR  = 0b0100,
+//         [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) ^ cpu.getReg(instr.rs2_id));},
+//         // SRL  = 0b0101,
+//         [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, static_cast<uint32_t>(cpu.getReg(instr.rs1_id)) >> cpu.getReg(instr.rs2_id));},
+//         // OR   = 0b0110,
+//         [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) | cpu.getReg(instr.rs2_id));},
+//         // AND  = 0b0111,
+//         [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) & cpu.getReg(instr.rs2_id));},
+//         // SUB  = 0b1000,
+//         [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) - cpu.getReg(instr.rs2_id));},
+//         // SRA  = 0b1001,
+//         [] (Cpu &cpu, Instr &instr) {cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) >> cpu.getReg(instr.rs2_id));},
+//     };
 
 const std::vector<std::function<void(Cpu &, Instr &)>> executeBranchFuncs =
     {
