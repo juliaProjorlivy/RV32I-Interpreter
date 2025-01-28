@@ -1,12 +1,14 @@
 #ifndef CPU_RV_HPP
 #define CPU_RV_HPP
 
+#include <cstdint>
 #include <functional>
 #include <limits.h>
 
 #include "asmjit/core/compiler.h"
 #include "asmjit/core/jitruntime.h"
 #include "asmjit/x86/x86compiler.h"
+#include "asmjit/x86/x86operand.h"
 #include "rv32.hpp"
 #include "rv32i.hpp"
 #include "rv32m.hpp"
@@ -300,7 +302,7 @@ const std::vector<std::vector<std::function<void(Cpu &, Instr &)>>> executeOpFun
                 }
                 else
                 {
-                    cpu.setReg(instr.rd_id, static_cast<reg_t>(cpu.getReg(instr.rs1_id) % cpu.getReg(instr.rs2_id)));
+                    cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) % cpu.getReg(instr.rs2_id));
                 }
             },
         //REMU
@@ -438,31 +440,163 @@ const std::vector<std::function<void(Instr &instr, TranslationAttr &attr)>> tran
         [] (Instr &instr, TranslationAttr &attr) {attr.cc.sar(attr.ret, attr.dst2);},
     };
 
-const std::vector<std::function<void(Instr &instr, TranslationAttr &attr)>> translateOpFuncs =
-    {
-        // ADD  = 0b0000
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.add(attr.ret, attr.dst2);},
-        // SLL  = 0b0001
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.shl(attr.ret, attr.dst2);},
-        // SLT  = 0b0010
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.cmp(attr.ret, attr.dst2);
-                attr.cc.setl(attr.ret);},
-        // SLTU = 0b0011
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.cmp(attr.ret, attr.dst2);
-                attr.cc.setb(attr.ret);},
-        // XOR  = 0b0100
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.xor_(attr.ret, attr.dst2);},
-        // SRL  = 0b0101
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.shr(attr.ret, attr.dst2);},
-        // OR   = 0b0110
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.or_(attr.ret, attr.dst2);},
-        // AND  = 0b0111
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.and_(attr.ret, attr.dst2);},
-        // SUB  = 0b1000
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.sub(attr.ret, attr.dst2);},
-        // SRA  = 0b1001
-        [] (Instr &instr, TranslationAttr &attr) {attr.cc.sar(attr.ret, attr.dst2);},
 
+const std::vector<std::vector<std::function<void(Instr &instr, TranslationAttr &attr)>>> translateOpFuncs =
+    {
+        {
+            // ADD  = 0b0000
+            [] (Instr &instr, TranslationAttr &attr) {attr.cc.add(attr.ret, attr.dst2);},
+            // SLL  = 0b0001
+            [] (Instr &instr, TranslationAttr &attr) {attr.cc.shl(attr.ret, attr.dst2);},
+            // SLT  = 0b0010
+            [] (Instr &instr, TranslationAttr &attr) {attr.cc.cmp(attr.ret, attr.dst2);
+                attr.cc.setl(attr.ret);},
+            // SLTU = 0b0011
+            [] (Instr &instr, TranslationAttr &attr) {attr.cc.cmp(attr.ret, attr.dst2);
+                attr.cc.setb(attr.ret);},
+            // XOR  = 0b0100
+            [] (Instr &instr, TranslationAttr &attr) {attr.cc.xor_(attr.ret, attr.dst2);},
+            // SRL  = 0b0101
+            [] (Instr &instr, TranslationAttr &attr) {attr.cc.shr(attr.ret, attr.dst2);},
+            // OR   = 0b0110
+            [] (Instr &instr, TranslationAttr &attr) {attr.cc.or_(attr.ret, attr.dst2);},
+            // AND  = 0b0111
+            [] (Instr &instr, TranslationAttr &attr) {attr.cc.and_(attr.ret, attr.dst2);},
+            // SUB  = 0b1000
+            [] (Instr &instr, TranslationAttr &attr) {attr.cc.sub(attr.ret, attr.dst2);},
+            // SRA  = 0b1001
+            [] (Instr &instr, TranslationAttr &attr) {attr.cc.sar(attr.ret, attr.dst2);},
+        },
+        {
+            //MUL
+            [] (Instr &instr, TranslationAttr &attr) {attr.cc.imul(attr.ret, attr.dst2);
+            attr.cc.and_(attr.ret, 0xffffffff);},
+            //MULH
+            [] (Instr &instr, TranslationAttr &attr) {attr.cc.imul(attr.ret, attr.dst2);
+            attr.cc.shr(attr.ret, 32);},
+            //MULHSU
+            [] (Instr &instr, TranslationAttr &attr) 
+            {
+                asmjit::Label L_SIGNED = attr.cc.newLabel();
+                asmjit::Label L_END = attr.cc.newLabel();
+                attr.cc.cmp(attr.ret, 0);
+                attr.cc.jl(L_SIGNED);
+                attr.cc.mul(attr.ret, attr.dst2);
+                attr.cc.jmp(L_END);
+
+                attr.cc.bind(L_SIGNED);
+                attr.cc.imul(attr.ret, -1);
+                attr.cc.mul(attr.ret, attr.dst2);
+                attr.cc.imul(attr.ret, -1);
+
+                attr.cc.bind(L_END);
+                attr.cc.shr(attr.ret, 32);
+            },
+            //MULHU
+            [] (Instr &instr, TranslationAttr &attr) {attr.cc.mul(attr.ret, attr.dst2);
+            attr.cc.shr(attr.ret, 32);},
+            //DIV
+            [] (Instr &instr, TranslationAttr &attr) 
+            {
+                asmjit::Label L_ZERO = attr.cc.newLabel();
+                asmjit::Label L_MAYBE_OVERFLOW = attr.cc.newLabel();
+                asmjit::Label L_OVERFLOW = attr.cc.newLabel();
+                asmjit::Label L_SIMPLE = attr.cc.newLabel();
+                asmjit::Label L_END = attr.cc.newLabel();
+
+                attr.cc.cmp(asmjit::x86::ecx, 0);
+                attr.cc.je(L_ZERO);
+                attr.cc.cmp(asmjit::x86::ecx, -1);
+                attr.cc.je(L_MAYBE_OVERFLOW);
+                attr.cc.bind(L_SIMPLE);
+                attr.cc.push(asmjit::x86::edx);
+                attr.cc.cdq(asmjit::x86::edx, asmjit::x86::eax);
+                attr.cc.idiv(asmjit::x86::edx, asmjit::x86::eax, asmjit::x86::ecx);
+                attr.cc.pop(asmjit::x86::edx);
+                attr.cc.jmp(L_END);
+
+                attr.cc.bind(L_ZERO);
+                attr.cc.mov(asmjit::x86::eax, 0xffffffff);
+                attr.cc.jmp(L_END);
+
+                attr.cc.bind(L_MAYBE_OVERFLOW);
+                attr.cc.cmp(asmjit::x86::eax, INT_MIN);
+                attr.cc.jne(L_SIMPLE);
+
+                attr.cc.bind(L_END);
+            },
+            //DIVU
+            [] (Instr &instr, TranslationAttr &attr) 
+            {
+                asmjit::Label L_ZERO = attr.cc.newLabel();
+                asmjit::Label L_END = attr.cc.newLabel();
+
+                attr.cc.cmp(attr.ret, 0);
+                attr.cc.je(L_ZERO);
+                attr.cc.cmp(attr.dst2, -1);
+                attr.cc.div(attr.ret, attr.dst2);
+                attr.cc.jmp(L_END);
+
+                attr.cc.bind(L_ZERO);
+                attr.cc.mov(attr.ret, 0xffffffff);
+
+                attr.cc.bind(L_END);
+            },
+            //REM
+            [] (Instr &instr, TranslationAttr &attr) 
+            {
+                asmjit::Label L_ZERO = attr.cc.newLabel();
+                asmjit::Label L_MAYBE_OVERFLOW = attr.cc.newLabel();
+                asmjit::Label L_OVERFLOW = attr.cc.newLabel();
+                asmjit::Label L_SIMPLE = attr.cc.newLabel();
+                asmjit::Label L_END = attr.cc.newLabel();
+
+                attr.cc.cmp(attr.ret, 0);
+                attr.cc.je(L_ZERO);
+                attr.cc.cmp(attr.dst2, -1);
+                attr.cc.je(L_MAYBE_OVERFLOW);
+                attr.cc.bind(L_SIMPLE);
+                attr.cc.idiv(attr.ret, attr.dst2);
+                attr.cc.jmp(L_END);
+
+                attr.cc.bind(L_ZERO);
+                attr.cc.mov(attr.ret, 0xffffffff);
+
+                attr.cc.bind(L_MAYBE_OVERFLOW);
+                attr.cc.cmp(attr.ret, INT_MIN);
+                attr.cc.jne(L_SIMPLE);
+
+                attr.cc.bind(L_END);
+            },
+            // [] (Cpu &cpu, Instr &instr) 
+            // {
+            //     if(cpu.getReg(instr.rs2_id) == 0)
+            //     {
+            //         cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id));
+            //     }
+            //     else if(cpu.getReg(instr.rs1_id) == INT_MIN && cpu.getReg(instr.rs2_id) == -1)
+            //     {
+            //         cpu.setReg(instr.rd_id, 0);
+            //     }
+            //     else
+            // {
+            //         cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id) % cpu.getReg(instr.rs2_id));
+            //     }
+            // },
+            //REMU
+            [] (Instr &instr, TranslationAttr &attr) {attr.cc.mul(attr.ret, attr.dst2);},
+            // [] (Cpu &cpu, Instr &instr) 
+            // {
+            //     if(cpu.getReg(instr.rs2_id) == 0)
+            //     {
+            //         cpu.setReg(instr.rd_id, cpu.getReg(instr.rs1_id));
+            //     }
+            //     else
+            // {
+            //         cpu.setReg(instr.rd_id, static_cast<reg_t>(cpu.getReg(instr.rs1_id) % cpu.getReg(instr.rs2_id)));
+            //     }
+            // },
+        }
     };
 
 const std::vector<std::function<void(Instr &instr, TranslationAttr &attr)>> translateBranchFuncs =

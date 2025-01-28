@@ -90,3 +90,25 @@ TEST_F(RV32I_Test, TEST_DECODE_MUL)
     EXPECT_EQ(instr.funct3, static_cast<uint8_t>(R::MulDiv::funct3::MUL));
 }
 
+TEST_F(RV32I_Test, TEST_DECODE_DIV)
+{
+    Instr instr = decode(INSTR_TO_TEST::div_x3_x4_x5);
+    EXPECT_EQ(instr.opcode, Opcode::Op);
+    EXPECT_EQ(instr.rd_id, 3);
+    EXPECT_EQ(instr.rs1_id, 4);
+    EXPECT_EQ(instr.rs2_id, 5);
+    EXPECT_EQ(instr.funct7, static_cast<uint32_t>(R::Op::funct7::M_EX));
+    EXPECT_EQ(instr.funct3, static_cast<uint8_t>(R::MulDiv::funct3::DIV));
+}
+
+TEST_F(RV32I_Test, TEST_DECODE_REM)
+{
+    Instr instr = decode(INSTR_TO_TEST::rem_x3_x4_x5);
+    EXPECT_EQ(instr.opcode, Opcode::Op);
+    EXPECT_EQ(instr.rd_id, 3);
+    EXPECT_EQ(instr.rs1_id, 4);
+    EXPECT_EQ(instr.rs2_id, 5);
+    EXPECT_EQ(instr.funct7, static_cast<uint32_t>(R::Op::funct7::M_EX));
+    EXPECT_EQ(instr.funct3, static_cast<uint8_t>(R::MulDiv::funct3::REM));
+}
+

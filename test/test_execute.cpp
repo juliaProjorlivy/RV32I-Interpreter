@@ -155,3 +155,35 @@ TEST_F(RV32I_Test, TEST_EXECUTE_MULH)
     EXPECT_EQ(cpu->getReg(5), INT_MAX);
 }
 
+TEST_F(RV32I_Test, TEST_EXECUTE_DIV)
+{
+    cpu->setReg(3, 0);
+    cpu->setReg(4,50);
+    cpu->setReg(5,2);
+    Instr instr = decode(INSTR_TO_TEST::div_x3_x4_x5);
+    instr.exec(*cpu, instr);
+    EXPECT_EQ(cpu->getReg(3), 25);
+    EXPECT_EQ(cpu->getReg(4), 50);
+    EXPECT_EQ(cpu->getReg(5), 2);
+
+    cpu->setReg(3, 0);
+    cpu->setReg(4,50);
+    cpu->setReg(5,0);
+    instr.exec(*cpu, instr);
+    EXPECT_EQ(cpu->getReg(3), -1);
+    EXPECT_EQ(cpu->getReg(4), 50);
+    EXPECT_EQ(cpu->getReg(5), 0);
+}
+
+TEST_F(RV32I_Test, TEST_EXECUTE_REM)
+{
+    cpu->setReg(3, 0);
+    cpu->setReg(4,51);
+    cpu->setReg(5,50);
+    Instr instr = decode(INSTR_TO_TEST::rem_x3_x4_x5);
+    instr.exec(*cpu, instr);
+    EXPECT_EQ(cpu->getReg(3), 1);
+    EXPECT_EQ(cpu->getReg(4), 51);
+    EXPECT_EQ(cpu->getReg(5), 50);
+}
+

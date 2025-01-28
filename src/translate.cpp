@@ -1,4 +1,5 @@
 #include "asmjit/core/codeholder.h"
+#include "asmjit/core/logger.h"
 #include "asmjit/core/compiler.h"
 #include "asmjit/core/func.h"
 #include "asmjit/x86/x86compiler.h"
@@ -62,20 +63,44 @@ void translateImm(Cpu &cpu, Instr &instr, TranslationAttr &attr)
         attr.cc.mov(attr.dst2, instr.imm);
         translateImmFuncs[instr.funct3](instr, attr);
         attr.cc.mov((cpu.regs[instr.rd_id].toDwordPtr()), attr.ret);
+        // attr.cc.push(asmjit::x86::eax);
+        // attr.cc.push(asmjit::x86::ecx);
+        // attr.cc.mov(asmjit::x86::eax, cpu.regs[instr.rs1_id].toDwordPtr());
+        // attr.cc.mov(asmjit::x86::ecx, instr.imm);
+        // translateImmFuncs[instr.funct3](instr, attr);
+        // attr.cc.mov((cpu.regs[instr.rd_id].toDwordPtr()), asmjit::x86::eax);
+        // attr.cc.pop(asmjit::x86::ecx);
+        // attr.cc.pop(asmjit::x86::eax);
 
         #ifdef TRACING
         TraceRC(cpu, instr, attr);
         #endif
     }
 }
+
 void translateOp(Cpu &cpu, Instr &instr, TranslationAttr &attr)
 {
     if(instr.rd_id != 0)
     {
-        attr.cc.mov(attr.ret, cpu.regs[instr.rs1_id].toDwordPtr());
-        attr.cc.mov(attr.dst2, cpu.regs[instr.rs2_id].toDwordPtr());
-        translateOpFuncs[instr.funct3](instr, attr);
-        attr.cc.mov(cpu.regs[instr.rd_id].toDwordPtr(), attr.ret);
+        if(instr.funct7 == R::Op::funct7::I_EX_MAIN)
+        {
+            attr.cc.mov(attr.ret, cpu.regs[instr.rs1_id].toDwordPtr());
+            attr.cc.mov(attr.dst2, cpu.regs[instr.rs2_id].toDwordPtr());
+            translateOpFuncs[instr.funct7][instr.funct3](instr, attr);
+            attr.cc.mov(cpu.regs[instr.rd_id].toDwordPtr(), attr.ret);
+        }
+        else if(instr.funct7 == R::Op::funct7::M_EX)
+        {
+            attr.cc.push(asmjit::x86::eax);
+            attr.cc.push(asmjit::x86::ecx);
+            attr.cc.mov(asmjit::x86::eax, cpu.regs[instr.rs2_id].toDwordPtr());
+            attr.cc.mov(asmjit::x86::ecx, asmjit::x86::eax);
+            attr.cc.mov(asmjit::x86::eax, cpu.regs[instr.rs1_id].toDwordPtr());
+            translateOpFuncs[instr.funct7][instr.funct3](instr, attr);
+            attr.cc.mov(cpu.regs[instr.rd_id].toDwordPtr(), asmjit::x86::eax);
+            attr.cc.pop(asmjit::x86::ecx);
+            attr.cc.pop(asmjit::x86::eax);
+        }
 
         #ifdef TRACING
         TraceRC(cpu, instr, attr);
@@ -362,8 +387,8 @@ Cpu::func_t translate(Cpu &cpu, std::vector<Instr> &bb)
     asmjit::x86::Compiler cc(&code);
     cc.addFunc(asmjit::FuncSignature::build<void>());
 
-    // asmjit::FileLogger logger{};
-    // code.setLogger(&logger);
+    asmjit::FileLogger logger(stdout);
+    code.setLogger(&logger);
 
     asmjit::x86::Gp dst1 = cc.newGpd();
     asmjit::x86::Gp dst2 = cc.newGpd();
